@@ -1,158 +1,688 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>道の駅 巡り達成表</title>
-    <style>
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            padding: 20px 10px;
-            color: #333;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-        h1 {
-            text-align: center;
-            font-size: 22px;
-            color: #2c3e50;
-            margin-top: 0;
-        }
-        .progress-card {
-            background: #e8f5e9;
-            border: 2px solid #a5d6a7;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .progress-title {
-            font-size: 14px;
-            color: #2e7d32;
-            font-weight: bold;
-        }
-        .progress-num {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1b5e20;
-            margin: 5px 0;
-        }
-        .progress-bar-bg {
-            background: #c8e6c9;
-            height: 14px;
-            border-radius: 7px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        .progress-bar-fill {
-            background: #4caf50;
-            height: 100%;
-            width: 0%;
-            transition: width 0.4s ease;
-        }
-        .category {
-            margin-top: 20px;
-        }
-        .category-title {
-            font-size: 16px;
-            color: #1b5e20;
-            border-bottom: 2px solid #81c784;
-            padding-bottom: 4px;
-            margin-bottom: 10px;
-        }
-        .item {
-            display: flex;
-            align-items: center;
-            padding: 10px 8px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
-        }
-        .item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 12px;
-            accent-color: #4caf50;
-            cursor: pointer;
-        }
-        .item label {
-            font-size: 15px;
-            cursor: pointer;
-            flex-grow: 1;
-        }
-        .item.checked label {
-            text-decoration: line-through;
-            color: #a0a0a0;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#2e7d32">
+<title>道の駅スタンプラリー｜全国1,231駅</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root {
+    --primary: #2e7d32;
+    --primary-dark: #1b5e20;
+    --accent: #ff8f00;
+    --danger: #d32f2f;
+    --bg: #f4f6f5;
+    --card: #ffffff;
+    --text: #263238;
+    --muted: #78909c;
+    --border: #e0e0e0;
+    --visited: #4caf50;
+    --unvisited: #90a4ae;
+    --near: #ff8f00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; color: var(--text); background: var(--bg); overscroll-behavior: none; }
+  body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+  header { background: var(--primary); color: #fff; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 1000; }
+  header h1 { font-size: 16px; font-weight: 700; }
+  header h1 small { display: block; font-size: 11px; font-weight: 400; opacity: .85; }
+  #progress-badge { background: rgba(255,255,255,.18); padding: 6px 10px; border-radius: 20px; font-size: 13px; font-weight: 700; text-align: right; }
+  #progress-badge small { display: block; font-size: 10px; font-weight: 400; opacity: .85; }
+
+  #tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); }
+  #tabs button { flex: 1; background: none; border: none; padding: 12px 6px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; position: relative; }
+  #tabs button.active { color: var(--primary); }
+  #tabs button.active::after { content: ""; position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px; background: var(--primary); border-radius: 3px 3px 0 0; }
+
+  main { flex: 1; overflow: hidden; position: relative; }
+  .view { position: absolute; inset: 0; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .view.active { display: block; }
+
+  /* --- 地図 --- */
+  #map-view { display: none; }
+  #map-view.active { display: block; }
+  #map { position: absolute; inset: 0; }
+  #locate-btn { position: absolute; bottom: 20px; right: 14px; z-index: 500; background: #fff; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); border-radius: 50%; width: 52px; height: 52px; font-size: 22px; cursor: pointer; }
+  #locate-btn.on { background: var(--primary); color: #fff; }
+  .legend { position: absolute; bottom: 20px; left: 14px; z-index: 500; background: rgba(255,255,255,.95); padding: 8px 12px; border-radius: 10px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15); line-height: 1.7; }
+  .legend span { display: inline-flex; align-items: center; margin-right: 10px; }
+  .legend i { width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
+
+  /* --- リスト --- */
+  #list-header { padding: 10px 14px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; display: flex; gap: 8px; align-items: center; }
+  #search { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; outline: none; }
+  #search:focus { border-color: var(--primary); }
+  #filter { padding: 8px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; background: #fff; }
+
+  .station-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card); border-bottom: 1px solid var(--border); cursor: pointer; }
+  .station-item:active { background: #f0f4f0; }
+  .station-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; background: var(--unvisited); position: relative; }
+  .station-item.visited .station-icon { background: var(--visited); }
+  .station-item.near .station-icon { background: var(--near); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,143,0,.6); } 50% { box-shadow: 0 0 0 10px rgba(255,143,0,0); } }
+  .station-info { flex: 1; min-width: 0; }
+  .station-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .station-meta { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; }
+  .station-dist { font-size: 15px; font-weight: 700; color: var(--primary); text-align: right; flex-shrink: 0; }
+  .station-item.visited .station-dist { color: var(--visited); }
+  .station-item.visited .station-name::after { content: " ✓"; color: var(--visited); }
+  .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* --- 進捗 --- */
+  #progress-view { padding: 16px 14px; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .stat-card h2 { font-size: 14px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .stat-big { font-size: 32px; font-weight: 800; color: var(--primary); }
+  .stat-big small { font-size: 14px; color: var(--muted); font-weight: 400; }
+  .progress-bar { height: 12px; background: #e0e0e0; border-radius: 6px; overflow: hidden; margin-top: 10px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width .6s; }
+  .pref-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 12px; }
+  .pref-row { display: flex; justify-content: space-between; padding: 8px 10px; background: #f8f9f8; border-radius: 8px; font-size: 13px; }
+  .pref-row.done { background: #e8f5e9; color: var(--primary-dark); font-weight: 600; }
+  .pref-row .count { font-variant-numeric: tabular-nums; }
+
+  /* --- モーダル --- */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
+  .modal.show { display: flex; }
+  .modal-box { background: #fff; width: 100%; max-width: 500px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; animation: slideup .25s; }
+  @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal h3 { font-size: 20px; margin-bottom: 4px; }
+  .modal .sub { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .modal .detail { font-size: 13px; margin-bottom: 8px; color: #455a64; }
+  .modal .detail b { color: var(--text); }
+  .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .btn.primary { background: var(--primary); color: #fff; }
+  .btn.primary:disabled { background: #bdbdbd; cursor: not-allowed; }
+  .btn.danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+  .btn.ghost { background: #fff; color: var(--muted); border: 1px solid var(--border); }
+  .stamp-hint { padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 8px; text-align: center; }
+  .stamp-hint.ok { background: #e8f5e9; color: var(--primary-dark); }
+  .stamp-hint.ng { background: #fff3e0; color: #e65100; }
+  .stamp-hint.err { background: #ffebee; color: var(--danger); }
+
+  #toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #263238; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 3000; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+
+  #splash { position: fixed; inset: 0; background: var(--primary); color: #fff; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #splash.hide { opacity: 0; pointer-events: none; transition: opacity .5s; }
+  #splash .logo { font-size: 48px; margin-bottom: 10px; }
+  #splash h2 { font-size: 22px; margin-bottom: 4px; }
+  #splash p { font-size: 13px; opacity: .9; margin-bottom: 20px; }
+  .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🚗 道の駅 巡り達成表</h1>
-
-    <div class="progress-card">
-        <div class="progress-title">現在の全制覇率</div>
-        <div class="progress-num"><span id="progress-percent">0</span>%</div>
-        <div>（訪問済み: <span id="visited-count">0</span> / 全 <span id="total-count">0</span> か所）</div>
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progress-bar"></div>
-        </div>
-    </div>
-
-    <div class="category">
-        <div class="category-title">関東エリア（サンプル）</div>
-        <div class="item"><input type="checkbox" id="m1"><label for="m1">道の駅 八王子滝山（東京都）</label></div>
-        <div class="item"><input type="checkbox" id="m2"><label for="m2">道の駅 保田小学校（千葉県）</label></div>
-        <div class="item"><input type="checkbox" id="m3"><label for="m3">道の駅 川場田園プラザ（群馬県）</label></div>
-        <div class="item"><input type="checkbox" id="m4"><label for="m4">道の駅 ごか（茨城県）</label></div>
-    </div>
-
-    <div class="category">
-        <div class="category-title">中部・近畿エリア（サンプル）</div>
-        <div class="item"><input type="checkbox" id="m5"><label for="m5">道の駅 富士川楽ざん（静岡県）</label></div>
-        <div class="item"><input type="checkbox" id="m6"><label for="m6">道の駅 針テラス（奈良県）</label></div>
-    </div>
+<div id="splash">
+  <div class="logo">🛣️</div>
+  <h2>道の駅スタンプラリー</h2>
+  <p>全国1,231駅・データ読込中…</p>
+  <div class="spinner"></div>
 </div>
 
+<header>
+  <h1>🛣️ 道の駅スタンプラリー<small>全国1,231駅</small></h1>
+  <div id="progress-badge">
+    <span id="badge-count">0 / 1231</span>
+    <small id="badge-pct">制覇 0.0%</small>
+  </div>
+</header>
+
+<div id="tabs">
+  <button data-view="list-view" class="active">📋 近い順</button>
+  <button data-view="map-view">🗺️ 地図</button>
+  <button data-view="progress-view">📊 進捗</button>
+</div>
+
+<main>
+  <!-- 近い順リスト -->
+  <section id="list-view" class="view active">
+    <div id="list-header">
+      <input id="search" type="search" placeholder="🔍 駅名・都道府県で検索">
+      <select id="filter">
+        <option value="all">全部</option>
+        <option value="unvisited">未訪問</option>
+        <option value="visited">訪問済</option>
+      </select>
+    </div>
+    <div id="list-body"></div>
+  </section>
+
+  <!-- 地図 -->
+  <section id="map-view" class="view">
+    <div id="map"></div>
+    <button id="locate-btn" title="現在地">📍</button>
+    <div class="legend">
+      <span><i style="background:#90a4ae"></i>未訪問</span>
+      <span><i style="background:#4caf50"></i>訪問済</span>
+      <span><i style="background:#2196f3"></i>現在地</span>
+    </div>
+  </section>
+
+  <!-- 進捗 -->
+  <section id="progress-view" class="view">
+    <div class="stat-card">
+      <h2>全国制覇の進捗</h2>
+      <div class="stat-big"><span id="stat-count">0</span><small> / 1,231駅</small></div>
+      <div class="progress-bar"><div class="progress-fill" id="stat-bar" style="width:0%"></div></div>
+      <div style="text-align:right;font-size:12px;color:var(--muted);margin-top:6px;"><span id="stat-pct">0.0</span>%</div>
+    </div>
+    <div class="stat-card">
+      <h2>都道府県別</h2>
+      <div class="pref-list" id="pref-list"></div>
+    </div>
+    <div class="stat-card">
+      <h2>設定</h2>
+      <button class="btn ghost" id="export-btn">📥 スタンプ履歴をJSONで書き出す</button>
+      <button class="btn ghost" id="import-btn">📤 JSONから読み込む</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+      <button class="btn danger" id="reset-btn" style="margin-top:16px;">🗑️ すべてリセット</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;">
+        データ出典：全国「道の駅」連絡会 + 国土数値情報「道の駅データ」(国土交通省、2019年) + OpenStreetMap Nominatim<br>
+        地図：© OpenStreetMap contributors<br>
+        端末ID: <span id="device-id">-</span>
+      </p>
+    </div>
+  </section>
+</main>
+
+<!-- 詳細モーダル -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="m-name">-</h3>
+    <div class="sub" id="m-sub">-</div>
+    <div class="detail" id="m-addr"></div>
+    <div class="detail" id="m-year"></div>
+    <div class="detail" id="m-hp"></div>
+    <div class="detail" id="m-facil"></div>
+    <div class="detail" id="m-dist"></div>
+    <div id="m-hint" class="stamp-hint"></div>
+    <button class="btn primary" id="m-stamp">🎯 スタンプを押す</button>
+    <button class="btn ghost" id="m-nav" style="margin-top:8px;">🧭 Googleマップで経路</button>
+    <button class="btn ghost" id="m-close" style="margin-top:8px;">閉じる</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Firebase v10 (compat 版で読み込みシンプルに) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
 <script>
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    const totalCountEl = document.getElementById('total-count');
-    const visitedCountEl = document.getElementById('visited-count');
-    const progressPercentEl = document.getElementById('progress-percent');
-    const progressBarEl = document.getElementById('progress-bar');
+/* ============================================================
+ *  Firebase 設定
+ *  ↓↓↓ ここを自分の設定に書き換えてください（README参照）
+ * ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
+};
+/* ============================================================ */
 
-    totalCountEl.textContent = checkboxes.length;
+// スタンプ判定距離（メートル）
+const STAMP_RADIUS_M = 100;
 
-    checkboxes.forEach(box => {
-        const isChecked = localStorage.getItem(box.id) === 'true';
-        box.checked = isChecked;
-        if (isChecked) box.parentElement.classList.add('checked');
+// ===== グローバル状態 =====
+const state = {
+  stations: [],
+  visited: {},           // { id: {ts:1699..., lat:..., lon:...} }
+  pos: null,             // {lat, lon, acc}
+  watchId: null,
+  map: null,
+  markers: {},
+  posMarker: null,
+  posCircle: null,
+  currentStation: null,
+  firebaseReady: false,
+  deviceId: null,
+};
 
-        box.addEventListener('change', () => {
-            localStorage.setItem(box.id, box.checked);
-            box.parentElement.classList.toggle('checked', box.checked);
-            updateProgress();
-        });
+// ===== 距離計算（Haversine 公式）=====
+function distance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+function fmtDist(m) {
+  if (m == null) return "距離不明";
+  if (m < 1000) return `${Math.round(m)}m`;
+  return `${(m/1000).toFixed(1)}km`;
+}
+
+// ===== トースト =====
+function toast(msg, dur=2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ===== 端末ID（Firebase匿名認証のUIDが入るまでlocalStorageで暫定）=====
+function getDeviceId() {
+  let id = localStorage.getItem('mne-device-id');
+  if (!id) {
+    id = 'dev-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    localStorage.setItem('mne-device-id', id);
+  }
+  return id;
+}
+
+// ===== Firebase 初期化 =====
+let db = null, auth = null;
+async function initFirebase() {
+  if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") {
+    console.warn("Firebase未設定：localStorage のみで動作します");
+    return false;
+  }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    await auth.signInAnonymously();
+    state.deviceId = auth.currentUser.uid;
+    document.getElementById('device-id').textContent = state.deviceId.slice(0,8) + '...';
+
+    // 訪問データ読込
+    const doc = await db.collection('users').doc(state.deviceId).get();
+    if (doc.exists) state.visited = doc.data().visited || {};
+
+    // リアルタイム同期
+    db.collection('users').doc(state.deviceId).onSnapshot(d => {
+      if (d.exists) {
+        state.visited = d.data().visited || {};
+        render();
+      }
     });
 
-    function updateProgress() {
-        const checkedCount = document.querySelectorAll('input[type="checkbox"]:checked').length;
-        visitedCountEl.textContent = checkedCount;
-        const percent = Math.round((checkedCount / checkboxes.length) * 100) || 0;
-        progressPercentEl.textContent = percent;
-        progressBarEl.style.width = percent + '%';
+    state.firebaseReady = true;
+    return true;
+  } catch (e) {
+    console.error("Firebase init failed:", e);
+    toast("クラウド同期不可、端末内保存で動作");
+    return false;
+  }
+}
+
+// ===== 訪問データの保存 =====
+async function saveVisited() {
+  localStorage.setItem('mne-visited', JSON.stringify(state.visited));
+  if (state.firebaseReady && db) {
+    try {
+      await db.collection('users').doc(state.deviceId)
+        .set({ visited: state.visited, updated: Date.now() }, { merge: true });
+    } catch (e) {
+      console.error("cloud save failed:", e);
     }
+  }
+}
 
-    updateProgress();
+// ===== データ読込 =====
+async function loadStations() {
+  const res = await fetch('stations.json');
+  const data = await res.json();
+  state.stations = data.stations.filter(s => s.lat && s.lon);
+  // localStorage フォールバック
+  const stored = localStorage.getItem('mne-visited');
+  if (stored) state.visited = JSON.parse(stored);
+}
+
+// ===== 現在地取得 =====
+function startGeo() {
+  if (!navigator.geolocation) { toast("位置情報が使えない端末です"); return; }
+  document.getElementById('locate-btn').classList.add('on');
+  state.watchId = navigator.geolocation.watchPosition(
+    pos => {
+      state.pos = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy };
+      updatePosMarker();
+      render();
+    },
+    err => {
+      toast("位置情報の取得に失敗：" + err.message);
+      document.getElementById('locate-btn').classList.remove('on');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+  );
+}
+function stopGeo() {
+  if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId);
+  state.watchId = null;
+  document.getElementById('locate-btn').classList.remove('on');
+}
+
+// ===== 地図 =====
+function initMap() {
+  state.map = L.map('map', { zoomControl: true }).setView([36.5, 138], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(state.map);
+
+  // マーカー描画
+  state.stations.forEach(s => {
+    const visited = !!state.visited[s.id];
+    const color = visited ? '#4caf50' : '#90a4ae';
+    const icon = L.divIcon({
+      className: 'st-marker',
+      html: `<div style="background:${color};width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.5);"></div>`,
+      iconSize: [16,16], iconAnchor: [8,8]
+    });
+    const m = L.marker([s.lat, s.lon], { icon })
+      .bindTooltip(s.name, { direction: 'top' })
+      .on('click', () => openStation(s));
+    m.addTo(state.map);
+    state.markers[s.id] = m;
+  });
+}
+function updateMapMarkers() {
+  Object.entries(state.markers).forEach(([id, m]) => {
+    const visited = !!state.visited[id];
+    const color = visited ? '#4caf50' : '#90a4ae';
+    m.setIcon(L.divIcon({
+      className: 'st-marker',
+      html: `<div style="background:${color};width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.5);"></div>`,
+      iconSize: [16,16], iconAnchor: [8,8]
+    }));
+  });
+}
+function updatePosMarker() {
+  if (!state.pos || !state.map) return;
+  const { lat, lon, acc } = state.pos;
+  if (!state.posMarker) {
+    state.posMarker = L.circleMarker([lat, lon], {
+      radius: 8, color: '#fff', weight: 2, fillColor: '#2196f3', fillOpacity: 1
+    }).addTo(state.map);
+    state.posCircle = L.circle([lat, lon], { radius: acc, color: '#2196f3', weight: 1, fillOpacity: 0.1 }).addTo(state.map);
+    state.map.setView([lat, lon], 13);
+  } else {
+    state.posMarker.setLatLng([lat, lon]);
+    state.posCircle.setLatLng([lat, lon]).setRadius(acc);
+  }
+}
+
+// ===== リスト描画 =====
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const filter = document.getElementById('filter').value;
+
+  let items = state.stations.map(s => {
+    const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
+    return { ...s, _dist: dist, _visited: !!state.visited[s.id] };
+  });
+
+  if (q) {
+    items = items.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.pref.toLowerCase().includes(q) ||
+      (s.addr || '').toLowerCase().includes(q)
+    );
+  }
+  if (filter === 'unvisited') items = items.filter(s => !s._visited);
+  if (filter === 'visited') items = items.filter(s => s._visited);
+
+  // 並び順：未訪問（近い順）→ 訪問済（新しい順）
+  if (state.pos) {
+    items.sort((a, b) => {
+      if (a._visited !== b._visited) return a._visited ? 1 : -1;
+      if (!a._visited) return a._dist - b._dist;
+      return (state.visited[b.id]?.ts || 0) - (state.visited[a.id]?.ts || 0);
+    });
+  } else {
+    items.sort((a, b) => {
+      if (a._visited !== b._visited) return a._visited ? 1 : -1;
+      return a.pref.localeCompare(b.pref, 'ja');
+    });
+  }
+
+  const body = document.getElementById('list-body');
+  if (items.length === 0) {
+    body.innerHTML = '<div class="empty">該当する道の駅はありません</div>';
+  } else {
+    body.innerHTML = items.slice(0, 300).map(s => {
+      const near = s._dist != null && s._dist <= STAMP_RADIUS_M && !s._visited;
+      const cls = ['station-item', s._visited ? 'visited' : '', near ? 'near' : ''].join(' ');
+      const icon = s._visited ? '✓' : (near ? '🎯' : '📍');
+      const distText = s._visited
+        ? '訪問済'
+        : (s._dist != null ? fmtDist(s._dist) : '—');
+      return `
+        <div class="${cls}" data-id="${escapeHtml(s.id)}">
+          <div class="station-icon">${icon}</div>
+          <div class="station-info">
+            <div class="station-name">${escapeHtml(s.name)}</div>
+            <div class="station-meta">
+              <span>${escapeHtml(s.pref)}</span>
+              <span>${escapeHtml(s.addr || '')}</span>
+            </div>
+          </div>
+          <div class="station-dist">${distText}</div>
+        </div>`;
+    }).join('');
+
+    body.querySelectorAll('.station-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const s = state.stations.find(x => x.id === el.dataset.id);
+        if (s) openStation(s);
+      });
+    });
+    if (items.length > 300) {
+      body.insertAdjacentHTML('beforeend', `<div class="empty">…他 ${items.length - 300} 駅（検索で絞り込んでください）</div>`);
+    }
+  }
+
+  updateProgress();
+  if (state.map) updateMapMarkers();
+}
+
+function updateProgress() {
+  const total = state.stations.length;
+  const done = Object.keys(state.visited).length;
+  const pct = total ? (done/total*100).toFixed(1) : 0;
+  document.getElementById('badge-count').textContent = `${done} / ${total}`;
+  document.getElementById('badge-pct').textContent = `制覇 ${pct}%`;
+  document.getElementById('stat-count').textContent = done;
+  document.getElementById('stat-pct').textContent = pct;
+  document.getElementById('stat-bar').style.width = pct + '%';
+
+  // 都道府県別
+  const byPref = {};
+  state.stations.forEach(s => {
+    if (!byPref[s.pref]) byPref[s.pref] = { done: 0, total: 0 };
+    byPref[s.pref].total++;
+    if (state.visited[s.id]) byPref[s.pref].done++;
+  });
+  const html = Object.entries(byPref)
+    .sort((a,b) => b[1].done/b[1].total - a[1].done/a[1].total)
+    .map(([pref, c]) => {
+      const done = c.done === c.total && c.total > 0;
+      return `<div class="pref-row ${done ? 'done' : ''}">
+        <span>${done ? '👑 ' : ''}${escapeHtml(pref)}</span>
+        <span class="count">${c.done} / ${c.total}</span>
+      </div>`;
+    }).join('');
+  document.getElementById('pref-list').innerHTML = html;
+}
+
+// ===== モーダル =====
+function openStation(s) {
+  state.currentStation = s;
+  const visited = !!state.visited[s.id];
+  const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
+  const near = dist != null && dist <= STAMP_RADIUS_M;
+
+  document.getElementById('m-name').textContent = s.name;
+  document.getElementById('m-sub').textContent = `${s.pref} ${s.addr || ''}`;
+  document.getElementById('m-year').innerHTML = s.year ? `<b>登録:</b> ${escapeHtml(s.touroku || '')} (${escapeHtml(s.year)})` : '';
+  document.getElementById('m-addr').innerHTML = `<b>座標:</b> ${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}`;
+  document.getElementById('m-hp').innerHTML = s.hp ? `<b>HP:</b> <a href="${escapeHtml(s.hp)}" target="_blank" rel="noopener">公式ページ</a>` : '';
+  const fac = s.facilities || {};
+  const facMap = { restaurant:'🍴レストラン', onsen:'♨️温泉', camp:'⛺キャンプ', ev:'🔌EV充電', wifi:'📶Wi-Fi', shop:'🛍️売店' };
+  const facList = Object.keys(fac).filter(k => fac[k]).map(k => facMap[k]).filter(Boolean).join(' ');
+  document.getElementById('m-facil').innerHTML = facList ? `<b>施設:</b> ${facList}` : '';
+  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${fmtDist(dist)}${state.pos ? ` (GPS精度 ±${Math.round(state.pos.acc)}m)` : ''}`;
+
+  const hint = document.getElementById('m-hint');
+  const btn = document.getElementById('m-stamp');
+  if (visited) {
+    const d = new Date(state.visited[s.id].ts);
+    hint.className = 'stamp-hint ok';
+    hint.textContent = `✅ ${d.toLocaleString('ja-JP')} にスタンプ済み`;
+    btn.textContent = '取り消す';
+    btn.className = 'btn danger';
+    btn.disabled = false;
+  } else if (!state.pos) {
+    hint.className = 'stamp-hint err';
+    hint.textContent = '📍 位置情報を有効にしてください';
+    btn.textContent = 'スタンプを押す';
+    btn.className = 'btn primary';
+    btn.disabled = true;
+  } else if (near) {
+    hint.className = 'stamp-hint ok';
+    hint.textContent = `🎯 半径${STAMP_RADIUS_M}m以内！スタンプが押せます`;
+    btn.textContent = '🎯 スタンプを押す';
+    btn.className = 'btn primary';
+    btn.disabled = false;
+  } else {
+    hint.className = 'stamp-hint ng';
+    hint.textContent = `あと ${fmtDist(dist - STAMP_RADIUS_M)} 近づくとスタンプできます`;
+    btn.textContent = 'スタンプを押す';
+    btn.className = 'btn primary';
+    btn.disabled = true;
+  }
+
+  document.getElementById('m-nav').onclick = () => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, '_blank');
+  };
+
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  state.currentStation = null;
+}
+async function doStamp() {
+  const s = state.currentStation;
+  if (!s) return;
+  const visited = !!state.visited[s.id];
+  if (visited) {
+    if (!confirm('スタンプを取り消しますか？')) return;
+    delete state.visited[s.id];
+    await saveVisited();
+    toast('スタンプを取り消しました');
+  } else {
+    if (!state.pos) return;
+    const d = distance(state.pos.lat, state.pos.lon, s.lat, s.lon);
+    if (d > STAMP_RADIUS_M) { toast('もう少し近づいてください'); return; }
+    state.visited[s.id] = { ts: Date.now(), lat: state.pos.lat, lon: state.pos.lon };
+    await saveVisited();
+    toast(`🎉 ${s.name} にスタンプ！`);
+  }
+  render();
+  openStation(s);
+}
+
+// ===== エクスポート／インポート／リセット =====
+function exportData() {
+  const blob = new Blob([JSON.stringify({ visited: state.visited, exported: new Date().toISOString() }, null, 2)],
+                       { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `michinoeki-stamps-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(file) {
+  const r = new FileReader();
+  r.onload = async e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.visited && confirm(`${Object.keys(data.visited).length} 件のスタンプを取り込みますか？（既存に追加）`)) {
+        Object.assign(state.visited, data.visited);
+        await saveVisited();
+        render();
+        toast('取り込みました');
+      }
+    } catch (e) { toast('JSON形式が不正です'); }
+  };
+  r.readAsText(file);
+}
+async function resetAll() {
+  if (!confirm('本当に全スタンプを削除しますか？（元に戻せません）')) return;
+  state.visited = {};
+  await saveVisited();
+  render();
+  toast('リセットしました');
+}
+
+// ===== ユーティリティ =====
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ===== 初期化 =====
+async function init() {
+  document.getElementById('device-id').textContent = getDeviceId().slice(0,10);
+  await initFirebase();
+  await loadStations();
+  initMap();
+  render();
+
+  // タブ切替
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById(b.dataset.view).classList.add('active');
+      if (b.dataset.view === 'map-view' && state.map) {
+        setTimeout(() => state.map.invalidateSize(), 100);
+      }
+    };
+  });
+
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('filter').addEventListener('change', render);
+  document.getElementById('m-stamp').addEventListener('click', doStamp);
+  document.getElementById('m-close').addEventListener('click', closeModal);
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') closeModal();
+  });
+  document.getElementById('locate-btn').addEventListener('click', () => {
+    if (state.watchId != null) stopGeo();
+    else startGeo();
+  });
+  document.getElementById('export-btn').addEventListener('click', exportData);
+  document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
+  document.getElementById('import-file').addEventListener('change', e => {
+    if (e.target.files[0]) importData(e.target.files[0]);
+  });
+  document.getElementById('reset-btn').addEventListener('click', resetAll);
+
+  // 起動時に位置情報を求める
+  startGeo();
+
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(() => document.getElementById('splash').remove(), 500);
+}
+
+init();
 </script>
-
 </body>
 </html>
