@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>道の駅 巡り達成表</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px 10px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            text-align: center;
+            font-size: 22px;
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .progress-card {
+            background: #e8f5e9;
+            border: 2px solid #a5d6a7;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .progress-title {
+            font-size: 14px;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .progress-num {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1b5e20;
+            margin: 5px 0;
+        }
+        .progress-bar-bg {
+            background: #c8e6c9;
+            height: 14px;
+            border-radius: 7px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-bar-fill {
+            background: #4caf50;
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .category {
+            margin-top: 20px;
+        }
+        .category-title {
+            font-size: 16px;
+            color: #1b5e20;
+            border-bottom: 2px solid #81c784;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+        .item {
+            display: flex;
+            align-items: center;
+            padding: 10px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        .item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            accent-color: #4caf50;
+            cursor: pointer;
+        }
+        .item label {
+            font-size: 15px;
+            cursor: pointer;
+            flex-grow: 1;
+        }
+        .item.checked label {
+            text-decoration: line-through;
+            color: #a0a0a0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚗 道の駅 巡り達成表</h1>
+
+    <div class="progress-card">
+        <div class="progress-title">現在の全制覇率</div>
+        <div class="progress-num"><span id="progress-percent">0</span>%</div>
+        <div>（訪問済み: <span id="visited-count">0</span> / 全 <span id="total-count">0</span> か所）</div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <div class="category">
+        <div class="category-title">関東エリア（サンプル）</div>
+        <div class="item"><input type="checkbox" id="m1"><label for="m1">道の駅 八王子滝山（東京都）</label></div>
+        <div class="item"><input type="checkbox" id="m2"><label for="m2">道の駅 保田小学校（千葉県）</label></div>
+        <div class="item"><input type="checkbox" id="m3"><label for="m3">道の駅 川場田園プラザ（群馬県）</label></div>
+        <div class="item"><input type="checkbox" id="m4"><label for="m4">道の駅 ごか（茨城県）</label></div>
+    </div>
+
+    <div class="category">
+        <div class="category-title">中部・近畿エリア（サンプル）</div>
+        <div class="item"><input type="checkbox" id="m5"><label for="m5">道の駅 富士川楽ざん（静岡県）</label></div>
+        <div class="item"><input type="checkbox" id="m6"><label for="m6">道の駅 針テラス（奈良県）</label></div>
+    </div>
+</div>
+
+<script>
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const totalCountEl = document.getElementById('total-count');
+    const visitedCountEl = document.getElementById('visited-count');
+    const progressPercentEl = document.getElementById('progress-percent');
+    const progressBarEl = document.getElementById('progress-bar');
+
+    totalCountEl.textContent = checkboxes.length;
+
+    checkboxes.forEach(box => {
+        const isChecked = localStorage.getItem(box.id) === 'true';
+        box.checked = isChecked;
+        if (isChecked) box.parentElement.classList.add('checked');
+
+        box.addEventListener('change', () => {
+            localStorage.setItem(box.id, box.checked);
+            box.parentElement.classList.toggle('checked', box.checked);
+            updateProgress();
+        });
+    });
+
+    function updateProgress() {
+        const checkedCount = document.querySelectorAll('input[type="checkbox"]:checked').length;
+        visitedCountEl.textContent = checkedCount;
+        const percent = Math.round((checkedCount / checkboxes.length) * 100) || 0;
+        progressPercentEl.textContent = percent;
+        progressBarEl.style.width = percent + '%';
+    }
+
+    updateProgress();
+</script>
+
+</body>
+</html>
