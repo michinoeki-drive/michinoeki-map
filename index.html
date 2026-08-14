@@ -32,7 +32,6 @@
   .header-actions { display: flex; align-items: center; gap: 8px; }
   #reload-btn { background: rgba(255,255,255,.18); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s; }
   #reload-btn:active { background: rgba(255,255,255,.3); }
-  /* SVGアイコン用 */
   #reload-btn svg { width: 16px; height: 16px; }
   header { background: var(--primary); color: #fff; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 1000; }
   header h1 { font-size: 16px; font-weight: 700; }
@@ -49,6 +48,9 @@
   main { flex: 1; overflow: hidden; position: relative; }
   .view { position: absolute; inset: 0; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .view.active { display: block; }
+
+  /* --- おおよそ位置情報表示用のバナー --- */
+  .approx-banner { background: #fff3e0; color: #e65100; font-size: 12px; padding: 8px 14px; border-bottom: 1px solid #ffe0b2; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 
   /* --- 地図 --- */
   #map-view { display: none; }
@@ -136,7 +138,6 @@
 <header>
   <h1>🛣️ 道の駅スタンプラリー<small>全国1,231駅</small></h1>
   <div class="header-actions">
-    <!-- SVGを使用した更新ボタン -->
     <button id="reload-btn" title="画面を更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -178,6 +179,7 @@
       <span><i style="background:#90a4ae"></i>未訪問</span>
       <span><i style="background:#4caf50"></i>訪問済</span>
       <span><i style="background:#2196f3"></i>現在地</span>
+      <span><i style="background:#ff9800"></i>現在地(概算)</span>
     </div>
   </section>
 
@@ -230,7 +232,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<!-- Firebase v10 (compat 版で読み込みシンプルに) -->
+<!-- Firebase v10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -238,7 +240,6 @@
 <script>
 /* ============================================================
  *  Firebase 設定
- *  ↓↓↓ ここを自分の設定に書き換えてください（README参照）
  * ============================================================ */
 const FIREBASE_CONFIG = {
   apiKey: "YOUR_API_KEY",
@@ -248,7 +249,6 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "000000000000",
   appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
 };
-/* ============================================================ */
 
 // スタンプ判定距離（メートル）
 const STAMP_RADIUS_M = 100;
@@ -256,8 +256,8 @@ const STAMP_RADIUS_M = 100;
 // ===== グローバル状態 =====
 const state = {
   stations: [],
-  visited: {},           // { id: {ts:1699..., lat:..., lon:...} }
-  pos: null,             // {lat, lon, acc}
+  visited: {},
+  pos: null,             // {lat, lon, acc, isApprox: true/false}
   watchId: null,
   map: null,
   markers: {},
@@ -284,14 +284,14 @@ function fmtDist(m) {
 }
 
 // ===== トースト =====
-function toast(msg, dur=2200) {
+function toast(msg, dur=2500) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), dur);
 }
 
-// ===== 端末ID（Firebase匿名認証のUIDが入るまでlocalStorageで暫定）=====
+// ===== 端末ID =====
 function getDeviceId() {
   let id = localStorage.getItem('mne-device-id');
   if (!id) {
@@ -316,11 +316,9 @@ async function initFirebase() {
     state.deviceId = auth.currentUser.uid;
     document.getElementById('device-id').textContent = state.deviceId.slice(0,8) + '...';
 
-    // 訪問データ読込
     const doc = await db.collection('users').doc(state.deviceId).get();
     if (doc.exists) state.visited = doc.data().visited || {};
 
-    // リアルタイム同期
     db.collection('users').doc(state.deviceId).onSnapshot(d => {
       if (d.exists) {
         state.visited = d.data().visited || {};
@@ -355,28 +353,66 @@ async function loadStations() {
   const res = await fetch('stations.json');
   const data = await res.json();
   state.stations = data.stations.filter(s => s.lat && s.lon);
-  // localStorage フォールバック
   const stored = localStorage.getItem('mne-visited');
   if (stored) state.visited = JSON.parse(stored);
 }
 
+// ===== IP / ネットワークによるおおよその位置情報取得（フォールバック） =====
+async function fetchIPLocation() {
+  try {
+    toast("GPSオフのため、ネットワークからおおよその位置を取得中…");
+    const res = await fetch('https://ipapi.co/json/');
+    const data = await res.json();
+    
+    if (data && data.latitude && data.longitude) {
+      state.pos = {
+        lat: parseFloat(data.latitude),
+        lon: parseFloat(data.longitude),
+        acc: 5000, // おおよそ5km精度の円
+        isApprox: true,
+        regionName: data.city || data.region || ''
+      };
+      toast(`おおよその位置を取得しました (${state.pos.regionName || 'IP位置推計'})`);
+      updatePosMarker();
+      render();
+    } else {
+      throw new Error("Invalid IP geo data");
+    }
+  } catch (e) {
+    console.warn("IP Geolocation failed:", e);
+    toast("位置情報の取得に失敗しました");
+  } finally {
+    document.getElementById('locate-btn').classList.remove('on');
+  }
+}
+
 // ===== 現在地取得 =====
 function startGeo() {
-  if (!navigator.geolocation) { toast("位置情報が使えない端末です"); return; }
+  if (!navigator.geolocation) {
+    fetchIPLocation();
+    return;
+  }
   document.getElementById('locate-btn').classList.add('on');
   state.watchId = navigator.geolocation.watchPosition(
     pos => {
-      state.pos = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy };
+      state.pos = {
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        acc: pos.coords.accuracy,
+        isApprox: false
+      };
       updatePosMarker();
       render();
     },
     err => {
-      toast("位置情報の取得に失敗：" + err.message);
-      document.getElementById('locate-btn').classList.remove('on');
+      console.warn("GPS Location error, fallback to IP location:", err);
+      // GPSが失敗した場合はIP位置情報へ切り替え
+      fetchIPLocation();
     },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
   );
 }
+
 function stopGeo() {
   if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId);
   state.watchId = null;
@@ -391,7 +427,6 @@ function initMap() {
     maxZoom: 18
   }).addTo(state.map);
 
-  // マーカー描画
   state.stations.forEach(s => {
     const visited = !!state.visited[s.id];
     const color = visited ? '#4caf50' : '#90a4ae';
@@ -407,6 +442,7 @@ function initMap() {
     state.markers[s.id] = m;
   });
 }
+
 function updateMapMarkers() {
   Object.entries(state.markers).forEach(([id, m]) => {
     const visited = !!state.visited[id];
@@ -418,18 +454,26 @@ function updateMapMarkers() {
     }));
   });
 }
+
 function updatePosMarker() {
   if (!state.pos || !state.map) return;
-  const { lat, lon, acc } = state.pos;
+  const { lat, lon, acc, isApprox } = state.pos;
+  const color = isApprox ? '#ff9800' : '#2196f3'; // おおよその場合はオレンジ色
+
   if (!state.posMarker) {
     state.posMarker = L.circleMarker([lat, lon], {
-      radius: 8, color: '#fff', weight: 2, fillColor: '#2196f3', fillOpacity: 1
+      radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1
     }).addTo(state.map);
-    state.posCircle = L.circle([lat, lon], { radius: acc, color: '#2196f3', weight: 1, fillOpacity: 0.1 }).addTo(state.map);
-    state.map.setView([lat, lon], 13);
+    
+    state.posCircle = L.circle([lat, lon], {
+      radius: acc, color: color, weight: 1, fillOpacity: 0.1, dashArray: isApprox ? '4, 4' : null
+    }).addTo(state.map);
+    
+    state.map.setView([lat, lon], isApprox ? 10 : 13);
   } else {
     state.posMarker.setLatLng([lat, lon]);
-    state.posCircle.setLatLng([lat, lon]).setRadius(acc);
+    state.posMarker.setStyle({ fillColor: color });
+    state.posCircle.setLatLng([lat, lon]).setRadius(acc).setStyle({ color: color, dashArray: isApprox ? '4, 4' : null });
   }
 }
 
@@ -437,6 +481,21 @@ function updatePosMarker() {
 function render() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   const filter = document.getElementById('filter').value;
+
+  // おおよそ位置情報バナーの表示制御
+  let approxBanner = document.getElementById('approx-banner');
+  if (state.pos && state.pos.isApprox) {
+    if (!approxBanner) {
+      approxBanner = document.createElement('div');
+      approxBanner.id = 'approx-banner';
+      approxBanner.className = 'approx-banner';
+      approxBanner.innerHTML = '⚠️ GPS未取得のため、ネットワークによる<b>おおよその現在地</b>を表示しています';
+      const listView = document.getElementById('list-view');
+      listView.insertBefore(approxBanner, listView.children[1]);
+    }
+  } else if (approxBanner) {
+    approxBanner.remove();
+  }
 
   let items = state.stations.map(s => {
     const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
@@ -453,7 +512,6 @@ function render() {
   if (filter === 'unvisited') items = items.filter(s => !s._visited);
   if (filter === 'visited') items = items.filter(s => s._visited);
 
-  // 並び順：未訪問（近い順）→ 訪問済（新しい順）
   if (state.pos) {
     items.sort((a, b) => {
       if (a._visited !== b._visited) return a._visited ? 1 : -1;
@@ -472,12 +530,12 @@ function render() {
     body.innerHTML = '<div class="empty">該当する道の駅はありません</div>';
   } else {
     body.innerHTML = items.slice(0, 300).map(s => {
-      const near = s._dist != null && s._dist <= STAMP_RADIUS_M && !s._visited;
+      const near = s._dist != null && s._dist <= STAMP_RADIUS_M && !s._visited && !state.pos?.isApprox;
       const cls = ['station-item', s._visited ? 'visited' : '', near ? 'near' : ''].join(' ');
       const icon = s._visited ? '✓' : (near ? '🎯' : '📍');
       const distText = s._visited
         ? '訪問済'
-        : (s._dist != null ? fmtDist(s._dist) : '—');
+        : (s._dist != null ? (state.pos?.isApprox ? `約${fmtDist(s._dist)}` : fmtDist(s._dist)) : '—');
       return `
         <div class="${cls}" data-id="${escapeHtml(s.id)}">
           <div class="station-icon">${icon}</div>
@@ -517,7 +575,6 @@ function updateProgress() {
   document.getElementById('stat-pct').textContent = pct;
   document.getElementById('stat-bar').style.width = pct + '%';
 
-  // 都道府県別
   const byPref = {};
   state.stations.forEach(s => {
     if (!byPref[s.pref]) byPref[s.pref] = { done: 0, total: 0 };
@@ -541,7 +598,8 @@ function openStation(s) {
   state.currentStation = s;
   const visited = !!state.visited[s.id];
   const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
-  const near = dist != null && dist <= STAMP_RADIUS_M;
+  const isApprox = state.pos && state.pos.isApprox;
+  const near = dist != null && dist <= STAMP_RADIUS_M && !isApprox;
 
   document.getElementById('m-name').textContent = s.name;
   document.getElementById('m-sub').textContent = `${s.pref} ${s.addr || ''}`;
@@ -552,7 +610,9 @@ function openStation(s) {
   const facMap = { restaurant:'🍴レストラン', onsen:'♨️温泉', camp:'⛺キャンプ', ev:'🔌EV充電', wifi:'📶Wi-Fi', shop:'🛍️売店' };
   const facList = Object.keys(fac).filter(k => fac[k]).map(k => facMap[k]).filter(Boolean).join(' ');
   document.getElementById('m-facil').innerHTML = facList ? `<b>施設:</b> ${facList}` : '';
-  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${fmtDist(dist)}${state.pos ? ` (GPS精度 ±${Math.round(state.pos.acc)}m)` : ''}`;
+  
+  const distLabel = isApprox ? `約${fmtDist(dist)} (※おおよその位置)` : `${fmtDist(dist)} (GPS精度 ±${Math.round(state.pos.acc)}m)`;
+  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${state.pos ? distLabel : '不明'}`;
 
   const hint = document.getElementById('m-hint');
   const btn = document.getElementById('m-stamp');
@@ -566,6 +626,12 @@ function openStation(s) {
   } else if (!state.pos) {
     hint.className = 'stamp-hint err';
     hint.textContent = '📍 位置情報を有効にしてください';
+    btn.textContent = 'スタンプを押す';
+    btn.className = 'btn primary';
+    btn.disabled = true;
+  } else if (isApprox) {
+    hint.className = 'stamp-hint ng';
+    hint.textContent = '⚠️ 現在おおよその位置情報を利用中のため、スタンプ判定を行うには高精度GPSの許可が必要です';
     btn.textContent = 'スタンプを押す';
     btn.className = 'btn primary';
     btn.disabled = true;
@@ -589,10 +655,12 @@ function openStation(s) {
 
   document.getElementById('modal').classList.add('show');
 }
+
 function closeModal() {
   document.getElementById('modal').classList.remove('show');
   state.currentStation = null;
 }
+
 async function doStamp() {
   const s = state.currentStation;
   if (!s) return;
@@ -603,7 +671,10 @@ async function doStamp() {
     await saveVisited();
     toast('スタンプを取り消しました');
   } else {
-    if (!state.pos) return;
+    if (!state.pos || state.pos.isApprox) {
+      toast('高精度GPSの位置情報が必要です');
+      return;
+    }
     const d = distance(state.pos.lat, state.pos.lon, s.lat, s.lon);
     if (d > STAMP_RADIUS_M) { toast('もう少し近づいてください'); return; }
     state.visited[s.id] = { ts: Date.now(), lat: state.pos.lat, lon: state.pos.lon };
