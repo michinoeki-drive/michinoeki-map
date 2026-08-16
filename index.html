@@ -1320,9 +1320,7 @@ function openStation(s) {
     : isApprox
       ? `約${fmtDist(dist)} (※おおよその位置)`
       : `${fmtDist(dist)} (GPS精度 ±${Math.round(state.pos.acc)}m)`;
-  document.getElementById('m-cur').innerHTML = state.pos
-    ? `<b>現在地:</b> ${escapeHtml(getLocationLabel(state.pos))}`
-    : '<b>現在地:</b> 不明';
+  document.getElementById('m-cur').innerHTML = '';
   document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${distLabel}`;
 
   const hint = document.getElementById('m-hint');
