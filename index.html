@@ -25,6 +25,24 @@
     --visited: #4caf50;
     --unvisited: #90a4ae;
     --near: #ff8f00;
+    --soft: #f8f9f8;
+    --soft-strong: #e8f5e9;
+    --modal-backdrop: rgba(0,0,0,.5);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121a1d;
+      --card: #1d252a;
+      --text: #edf4f7;
+      --muted: #9fb0b8;
+      --border: #2f3b41;
+      --visited: #66bb6a;
+      --unvisited: #526775;
+      --near: #ffb74d;
+      --soft: #1b2227;
+      --soft-strong: #22362a;
+      --modal-backdrop: rgba(0,0,0,.72);
+    }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; color: var(--text); background: var(--bg); overscroll-behavior: none; }
@@ -84,12 +102,13 @@
 
   /* --- リスト --- */
   #list-header { padding: 10px 14px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; display: flex; gap: 8px; align-items: center; }
-  #search { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; outline: none; }
+  #search { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; outline: none; background: var(--card); color: var(--text); }
+  #search::placeholder { color: var(--muted); }
   #search:focus { border-color: var(--primary); }
-  #filter { padding: 8px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; background: #fff; }
+  #filter { padding: 8px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; background: var(--card); color: var(--text); }
 
   .station-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card); border-bottom: 1px solid var(--border); cursor: pointer; }
-  .station-item:active { background: #f0f4f0; }
+  .station-item:active { background: rgba(255,255,255,0.04); }
   .station-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; background: var(--unvisited); position: relative; }
   .station-item.visited .station-icon { background: var(--visited); }
   .station-item.near .station-icon { background: var(--near); animation: pulse 1.5s infinite; }
@@ -111,8 +130,8 @@
   .progress-bar { height: 12px; background: #e0e0e0; border-radius: 6px; overflow: hidden; margin-top: 10px; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width .6s; }
   .pref-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 12px; }
-  .pref-row { display: flex; justify-content: space-between; padding: 8px 10px; background: #f8f9f8; border-radius: 8px; font-size: 13px; }
-  .pref-row.done { background: #e8f5e9; color: var(--primary-dark); font-weight: 600; }
+  .pref-row { display: flex; justify-content: space-between; padding: 8px 10px; background: var(--soft); border-radius: 8px; font-size: 13px; }
+  .pref-row.done { background: var(--soft-strong); color: var(--primary-dark); font-weight: 600; }
   .pref-row .count { font-variant-numeric: tabular-nums; }
 
   /* --- 日本地図ヒートマップ --- */
@@ -516,9 +535,9 @@
   }
 
   /* --- モーダル --- */
-  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
+  .modal { position: fixed; inset: 0; background: var(--modal-backdrop); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
   .modal.show { display: flex; }
-  .modal-box { background: #fff; width: 100%; max-width: 500px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; animation: slideup .25s; }
+  .modal-box { background: var(--card); color: var(--text); width: 100%; max-width: 500px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; animation: slideup .25s; }
   @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .modal h3 { font-size: 20px; margin-bottom: 4px; }
   .modal .sub { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
@@ -527,10 +546,10 @@
   .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; }
   .btn.primary { background: var(--primary); color: #fff; }
   .btn.primary:disabled { background: #bdbdbd; cursor: not-allowed; }
-  .btn.danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
-  .btn.ghost { background: #fff; color: var(--muted); border: 1px solid var(--border); }
+  .btn.danger { background: var(--card); color: var(--danger); border: 1px solid var(--danger); }
+  .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
   .stamp-hint { padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 8px; text-align: center; }
-  .stamp-hint.ok { background: #e8f5e9; color: var(--primary-dark); }
+  .stamp-hint.ok { background: var(--soft-strong); color: var(--primary-dark); }
   .stamp-hint.ng { background: #fff3e0; color: #e65100; }
   .stamp-hint.err { background: #ffebee; color: var(--danger); }
 
