@@ -740,6 +740,7 @@
     <button class="btn primary" id="m-stamp">🎯 スタンプを押す</button>
     <button class="btn ghost" id="m-show-map" style="margin-top:8px;">🗺️ アプリ内の地図で見る</button>
     <button class="btn ghost" id="m-nav" style="margin-top:8px;">🧭 Googleマップで経路</button>
+    <button class="btn ghost" id="m-nav-apple" style="margin-top:8px;">🍎 Appleマップで経路案内</button>
     <button class="btn ghost" id="m-close" style="margin-top:8px;">閉じる</button>
   </div>
 </div>
@@ -1364,6 +1365,11 @@ function openStation(s) {
 
   document.getElementById('m-nav').onclick = () => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, '_blank');
+  };
+
+  document.getElementById('m-nav-apple').onclick = () => {
+    const appleUrl = `https://maps.apple.com/?daddr=${s.lat},${s.lon}&dirflg=d`;
+    window.open(appleUrl, '_blank');
   };
 
   mapViewBtn.onclick = () => {
