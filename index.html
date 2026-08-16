@@ -222,6 +222,7 @@
     <div class="detail" id="m-dist"></div>
     <div id="m-hint" class="stamp-hint"></div>
     <button class="btn primary" id="m-stamp">🎯 スタンプを押す</button>
+    <button class="btn ghost" id="m-show-map" style="margin-top:8px;">🗺️ アプリ内の地図で見る</button>
     <button class="btn ghost" id="m-nav" style="margin-top:8px;">🧭 Googleマップで経路</button>
     <button class="btn ghost" id="m-close" style="margin-top:8px;">閉じる</button>
   </div>
@@ -552,7 +553,7 @@ function render() {
 
     body.querySelectorAll('.station-item').forEach(el => {
       el.addEventListener('click', () => {
-        const s = state.stations.find(x => x.id === el.dataset.id);
+        const s = state.stations.find(x => String(x.id) === el.dataset.id);
         if (s) openStation(s);
       });
     });
@@ -651,6 +652,31 @@ function openStation(s) {
 
   document.getElementById('m-nav').onclick = () => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, '_blank');
+  };
+
+  document.getElementById('m-show-map').onclick = () => {
+    closeModal(); // モーダルを閉じる
+    
+    // タブの表示をリセットし、「地図」タブをアクティブにする
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+    
+    document.querySelector('#tabs button[data-view="map-view"]').classList.add('active');
+    document.getElementById('map-view').classList.add('active');
+    
+    // 地図の表示を更新し、対象の道の駅にズームして移動する
+    if (state.map) {
+      setTimeout(() => {
+        state.map.invalidateSize(); // 地図のサイズを再計算
+        state.map.setView([s.lat, s.lon], 14); // ズームレベル14で対象の座標に移動
+        
+        // 該当する道の駅のツールチップ（駅名）を表示する
+        const marker = state.markers[s.id];
+        if (marker) {
+          marker.openTooltip();
+        }
+      }, 100); // タブ切り替えのアニメーションを待つために少し遅延させる
+    }
   };
 
   document.getElementById('modal').classList.add('show');
