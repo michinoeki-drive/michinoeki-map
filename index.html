@@ -44,7 +44,7 @@
       --modal-backdrop: rgba(0,0,0,.72);
     }
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; color: var(--text); background: var(--bg); overscroll-behavior: none; }
   body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
   .header-actions { display: flex; align-items: center; gap: 8px; }
@@ -67,7 +67,6 @@
   .view { position: absolute; inset: 0; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .view.active { display: block; }
 
-  /* --- おおよそ位置情報表示用のバナー --- */
   .approx-banner { background: #fff3e0; color: #e65100; font-size: 12px; padding: 8px 14px; border-bottom: 1px solid #ffe0b2; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 
   /* --- 地図 --- */
@@ -76,26 +75,11 @@
   #map { position: absolute; inset: 0; }
   #locate-btn { position: absolute; bottom: 20px; right: 14px; z-index: 500; background: #fff; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); border-radius: 50%; width: 52px; height: 52px; font-size: 22px; cursor: pointer; }
   #locate-btn.on { background: var(--primary); color: #fff; }
-  .legend { position: absolute; bottom: 20px; left: 14px; z-index: 500; background: rgba(255,255,255,.95); padding: 8px 12px; border-radius: 10px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15); line-height: 1.7; }
+  .legend { position: absolute; bottom: 20px; left: 14px; z-index: 500; background: rgba(255,255,255,.95); padding: 8px 12px; border-radius: 10px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15); line-height: 1.7; color: #333; }
   .legend span { display: inline-flex; align-items: center; margin-right: 10px; }
   .legend i { width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
 
-  #location-bar {
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: rgba(38, 50, 56, 0.96);
-    color: #fff;
-    font-size: 13px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.12);
-  }
+  #location-bar { position: sticky; bottom: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(38, 50, 56, 0.96); color: #fff; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.1); box-shadow: 0 -2px 10px rgba(0,0,0,0.12); }
   #location-bar.hidden { display: none; }
   #location-bar .location-label { opacity: 0.8; white-space: nowrap; }
   #location-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -133,406 +117,23 @@
   .pref-row { display: flex; justify-content: space-between; padding: 8px 10px; background: var(--soft); border-radius: 8px; font-size: 13px; }
   .pref-row.done { background: var(--soft-strong); color: var(--primary-dark); font-weight: 600; }
   .pref-row .count { font-variant-numeric: tabular-nums; }
-
-  /* --- 日本地図ヒートマップ --- */
-  .japan-map-container {
+  
+  /* --- ヒートマップ画像 --- */
+  .heatmap-image {
+    display: block;
     width: 100%;
     max-width: 800px;
+    height: auto;
     margin: 12px auto 0;
-    position: relative;
-    aspect-ratio: 777 / 482;
-    background: #fafafa;
     border-radius: 8px;
+    background: #fafafa; /* 画像保存時に見やすいようにライト固定 */
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: auto;
   }
-  .japan-map-region {
-    position: absolute;
-    box-sizing: border-box;
-  }
-  #hokkaido-touhoku {
-    width: 17.5%;
-    height: 55%;
-    right: 0;
-    top: 0;
-  }
-  #kantou {
-    width: 20%;
-    height: 36%;
-    right: 0;
-    top: 55%;
-  }
-  #tyubu {
-    width: 34.7%;
-    height: 44%;
-    left: 56.3%;
-    top: 46%;
-  }
-  #kinki {
-    width: 23.9%;
-    height: 44%;
-    left: 41.1%;
-    top: 46%;
-  }
-  #tyugoku {
-    width: 19.4%;
-    height: 20%;
-    left: 21.8%;
-    top: 46%;
-  }
-  #shikoku {
-    width: 23.7%;
-    height: 17.4%;
-    left: 21.8%;
-    top: 72.6%;
-  }
-  #kyusyu {
-    width: 19.6%;
-    height: 51%;
-    left: 0;
-    top: 49%;
-  }
-
-  .pref-btn {
-    position: absolute;
-    border: 0.5px solid #ffffff;
-    border-radius: 3px;              /* 角丸を小さくして枠内を広く確保 */
-    padding: 0;
-    background: #e0e0e0;
-    color: #333;
-    font-size: clamp(7px, 2.2vw, 10px); /* 画面幅に合わせて7px〜10pxで自動調整 */
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    white-space: nowrap;             /* 文字の折り返し（縦並び）を防止 */
-    line-height: 1;
-  }
-
-  .pref-btn span {
-    position: relative;
-    z-index: 2;
-    transform: scale(0.95);         /* 窮屈な場所で少し縮小表示 */
-  }
-  .pref-btn:hover {
-    opacity: 0.7;
-    transition: opacity 0.2s;
-  }
-
-  /* 北海道・東北の各県 */
-  #hokkaido {
-    width: 100%;
-    height: 26.4%;
-    top: 0;
-    left: 0;
-  }
-  #aomori {
-    width: 68.4%;
-    height: 16.2%;
-    top: 36.2%;
-    left: 15.4%;
-  }
-  #akita {
-    width: 49%;
-    height: 15.8%;
-    top: 52.5%;
-    left: 2.2%;
-  }
-  #iwate {
-    width: 49%;
-    height: 15.8%;
-    top: 52.5%;
-    left: 51.5%;
-  }
-  #yamagata {
-    width: 49%;
-    height: 15.8%;
-    top: 68.2%;
-    left: 2.2%;
-  }
-  #miyagi {
-    width: 49%;
-    height: 15.8%;
-    top: 68.2%;
-    left: 51.5%;
-  }
-  #fukushima {
-    width: 49%;
-    height: 15.8%;
-    top: 83.8%;
-    left: 51.5%;
-  }
-
-  /* 関東の各県 */
-  #gunma {
-    width: 31.6%;
-    height: 24%;
-    top: 0;
-    left: 0;
-  }
-  #tochigi {
-    width: 31.6%;
-    height: 24%;
-    top: 0;
-    left: 32%;
-  }
-  #ibaraki {
-    width: 32.9%;
-    height: 48.8%;
-    top: 0;
-    left: 63.3%;
-  }
-  #saitama {
-    width: 63.3%;
-    height: 24%;
-    top: 24.1%;
-    left: 0;
-  }
-  #chiba {
-    width: 32.9%;
-    height: 48.8%;
-    top: 48.8%;
-    left: 63.3%;
-  }
-  #tokyo {
-    width: 63.3%;
-    height: 24%;
-    top: 48.8%;
-    left: 0;
-  }
-  #kanagawa {
-    width: 42.4%;
-    height: 24%;
-    top: 72.9%;
-    left: 0;
-  }
-
-  /* 中部の各県 */
-  #nigata {
-    width: 31.5%;
-    height: 19.9%;
-    top: 0;
-    left: 68.5%;
-  }
-  #toyama {
-    width: 24.8%;
-    height: 19.9%;
-    top: 0;
-    left: 43.7%;
-  }
-  #ishikawa {
-    width: 18.5%;
-    height: 27%;
-    top: 0;
-    left: 25.2%;
-  }
-  #fukui {
-    width: 25.2%;
-    height: 19.9%;
-    top: 0;
-    left: 0;
-    z-index: 2;
-  }
-  #nagano {
-    width: 24.8%;
-    height: 40.3%;
-    top: 19.9%;
-    left: 43.7%;
-  }
-  #yamanashi {
-    width: 24.8%;
-    height: 19.9%;
-    top: 60.2%;
-    left: 43.7%;
-  }
-  #gifu {
-    width: 18.5%;
-    height: 26%;
-    top: 27%;
-    left: 25.2%;
-  }
-  #shizuoka {
-    width: 24.8%;
-    height: 19.9%;
-    top: 80.1%;
-    left: 43.7%;
-  }
-  #aichi {
-    width: 18.5%;
-    height: 27%;
-    top: 53%;
-    left: 25.2%;
-  }
-
-  /* 近畿の各県 */
-  #kyoto {
-    width: 36%;
-    height: 39.8%;
-    top: 0;
-    left: 27.4%;
-  }
-  #shiga {
-    width: 36.6%;
-    height: 19.9%;
-    top: 19.9%;
-    left: 63.4%;
-  }
-  #osaka {
-    width: 36%;
-    height: 40.3%;
-    top: 39.8%;
-    left: 27.4%;
-  }
-  #nara {
-    width: 18.3%;
-    height: 40.3%;
-    top: 39.8%;
-    left: 63.4%;
-  }
-  #mie {
-    width: 18.3%;
-    height: 40.3%;
-    top: 39.8%;
-    left: 81.7%;
-  }
-  #wakayama {
-    width: 60.8%;
-    height: 19.9%;
-    top: 80.1%;
-    left: 32.8%;
-  }
-  #hyougo {
-    width: 27.4%;
-    height: 46.3%;
-    top: 0;
-    left: 0;
-  }
-
-  /* 中国の各県 */
-  #tottori {
-    width: 33%;
-    height: 50%;
-    top: 0;
-    left: 66.9%;
-  }
-  #okayama {
-    width: 33%;
-    height: 50%;
-    top: 50%;
-    left: 66.9%;
-  }
-  #shimane {
-    width: 33.8%;
-    height: 50%;
-    top: 0;
-    left: 33%;
-  }
-  #hiroshima {
-    width: 33.8%;
-    height: 50%;
-    top: 50%;
-    left: 33%;
-  }
-  #yamaguchi {
-    width: 33%;
-    height: 100%;
-    top: 0;
-    left: 0;
-  }
-
-  /* 四国の各県 */
-  #kagawa {
-    width: 50%;
-    height: 50%;
-    top: 0;
-    left: 50%;
-  }
-  #ehime {
-    width: 50%;
-    height: 50%;
-    top: 0;
-    left: 0;
-  }
-  #tokushima {
-    width: 50%;
-    height: 50%;
-    top: 50%;
-    left: 50%;
-  }
-  #kouchi {
-    width: 50%;
-    height: 50%;
-    top: 50%;
-    left: 0;
-  }
-
-  /* 九州・沖縄の各県 */
-  #fukuoka {
-    width: 33%;
-    height: 20.2%;
-    top: 0;
-    left: 66.4%;
-  }
-  #saga {
-    width: 33%;
-    height: 20.2%;
-    top: 0;
-    left: 33.6%;
-  }
-  #nagasaki {
-    width: 33%;
-    height: 20.2%;
-    top: 0;
-    left: 0;
-  }
-  #oita {
-    width: 33%;
-    height: 20.2%;
-    top: 20.2%;
-    left: 66.4%;
-  }
-  #kumamoto {
-    width: 33%;
-    height: 40.5%;
-    top: 20.2%;
-    left: 33.6%;
-  }
-  #miyazaki {
-    width: 33%;
-    height: 20.2%;
-    top: 40.5%;
-    left: 66.4%;
-  }
-  #kagoshima {
-    width: 44.8%;
-    height: 19.8%;
-    top: 60.7%;
-    left: 54.6%;
-  }
-  #okinawa {
-    width: 33%;
-    height: 20.2%;
-    top: 79.9%;
-    left: 0;
-  }
-
-  .map-legend {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 8px;
-  }
-  .legend-bar {
-    width: 120px;
-    height: 8px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #e0e0e0 0%, #c8e6c9 25%, #81c784 50%, #4caf50 75%, #1b5e20 100%);
-  }
+  .map-legend { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; color: var(--muted); margin-top: 12px; }
+  .legend-bar { width: 120px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #e0e0e0 0%, #c8e6c9 25%, #81c784 50%, #4caf50 75%, #1b5e20 100%); }
 
   /* --- モーダル --- */
   .modal { position: fixed; inset: 0; background: var(--modal-backdrop); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
@@ -639,86 +240,12 @@
       <div style="text-align:right;font-size:12px;color:var(--muted);margin-top:6px;"><span id="stat-pct">0.0</span>%</div>
     </div>
 
-    <!-- 日本地図ヒートマップカード -->
-    <div class="stat-card">
+    <!-- 日本地図ヒートマップカード (完全画像化) -->
+    <div class="stat-card" id="heatmap-card">
       <h2>都道府県別 ヒートマップ</h2>
-      <div id="japan-map" class="japan-map-container">
-        <!-- 北海道・東北 -->
-        <div id="hokkaido-touhoku" class="japan-map-region">
-          <button class="pref-btn" id="hokkaido" data-pref="北海道"><span>北海道</span></button>
-          <button class="pref-btn" id="aomori" data-pref="青森県"><span>青森</span></button>
-          <button class="pref-btn" id="akita" data-pref="秋田県"><span>秋田</span></button>
-          <button class="pref-btn" id="iwate" data-pref="岩手県"><span>岩手</span></button>
-          <button class="pref-btn" id="yamagata" data-pref="山形県"><span>山形</span></button>
-          <button class="pref-btn" id="miyagi" data-pref="宮城県"><span>宮城</span></button>
-          <button class="pref-btn" id="fukushima" data-pref="福島県"><span>福島</span></button>
-        </div>
-
-        <!-- 関東 -->
-        <div id="kantou" class="japan-map-region">
-          <button class="pref-btn" id="gunma" data-pref="群馬県"><span>群馬</span></button>
-          <button class="pref-btn" id="tochigi" data-pref="栃木県"><span>栃木</span></button>
-          <button class="pref-btn" id="ibaraki" data-pref="茨城県"><span>茨城</span></button>
-          <button class="pref-btn" id="saitama" data-pref="埼玉県"><span>埼玉</span></button>
-          <button class="pref-btn" id="chiba" data-pref="千葉県"><span>千葉</span></button>
-          <button class="pref-btn" id="tokyo" data-pref="東京都"><span>東京</span></button>
-          <button class="pref-btn" id="kanagawa" data-pref="神奈川県"><span>神奈川</span></button>
-        </div>
-
-        <!-- 中部 -->
-        <div id="tyubu" class="japan-map-region">
-          <button class="pref-btn" id="nigata" data-pref="新潟県"><span>新潟</span></button>
-          <button class="pref-btn" id="toyama" data-pref="富山県"><span>富山</span></button>
-          <button class="pref-btn" id="ishikawa" data-pref="石川県"><span>石川</span></button>
-          <button class="pref-btn" id="fukui" data-pref="福井県"><span>福井</span></button>
-          <button class="pref-btn" id="nagano" data-pref="長野県"><span>長野</span></button>
-          <button class="pref-btn" id="gifu" data-pref="岐阜県"><span>岐阜</span></button>
-          <button class="pref-btn" id="yamanashi" data-pref="山梨県"><span>山梨</span></button>
-          <button class="pref-btn" id="aichi" data-pref="愛知県"><span>愛知</span></button>
-          <button class="pref-btn" id="shizuoka" data-pref="静岡県"><span>静岡</span></button>
-        </div>
-
-        <!-- 近畿 -->
-        <div id="kinki" class="japan-map-region">
-          <button class="pref-btn" id="kyoto" data-pref="京都府"><span>京都</span></button>
-          <button class="pref-btn" id="shiga" data-pref="滋賀県"><span>滋賀</span></button>
-          <button class="pref-btn" id="osaka" data-pref="大阪府"><span>大阪</span></button>
-          <button class="pref-btn" id="nara" data-pref="奈良県"><span>奈良</span></button>
-          <button class="pref-btn" id="mie" data-pref="三重県"><span>三重</span></button>
-          <button class="pref-btn" id="wakayama" data-pref="和歌山県"><span>和歌山</span></button>
-          <button class="pref-btn" id="hyougo" data-pref="兵庫県"><span>兵庫</span></button>
-        </div>
-
-        <!-- 中国 -->
-        <div id="tyugoku" class="japan-map-region">
-          <button class="pref-btn" id="tottori" data-pref="鳥取県"><span>鳥取</span></button>
-          <button class="pref-btn" id="okayama" data-pref="岡山県"><span>岡山</span></button>
-          <button class="pref-btn" id="shimane" data-pref="島根県"><span>島根</span></button>
-          <button class="pref-btn" id="hiroshima" data-pref="広島県"><span>広島</span></button>
-          <button class="pref-btn" id="yamaguchi" data-pref="山口県"><span>山口</span></button>
-        </div>
-
-        <!-- 四国 -->
-        <div id="shikoku" class="japan-map-region">
-          <button class="pref-btn" id="kagawa" data-pref="香川県"><span>香川</span></button>
-          <button class="pref-btn" id="ehime" data-pref="愛媛県"><span>愛媛</span></button>
-          <button class="pref-btn" id="tokushima" data-pref="徳島県"><span>徳島</span></button>
-          <button class="pref-btn" id="kouchi" data-pref="高知県"><span>高知</span></button>
-        </div>
-
-        <!-- 九州・沖縄 -->
-        <div id="kyusyu" class="japan-map-region">
-          <button class="pref-btn" id="fukuoka" data-pref="福岡県"><span>福岡</span></button>
-          <button class="pref-btn" id="saga" data-pref="佐賀県"><span>佐賀</span></button>
-          <button class="pref-btn" id="nagasaki" data-pref="長崎県"><span>長崎</span></button>
-          <button class="pref-btn" id="oita" data-pref="大分県"><span>大分</span></button>
-          <button class="pref-btn" id="kumamoto" data-pref="熊本県"><span>熊本</span></button>
-          <button class="pref-btn" id="miyazaki" data-pref="宮崎県"><span>宮崎</span></button>
-          <button class="pref-btn" id="kagoshima" data-pref="鹿児島県"><span>鹿児島</span></button>
-          <button class="pref-btn" id="okinawa" data-pref="沖縄県"><span>沖縄</span></button>
-        </div>
-      </div>
-      <div class="map-legend" style="margin-top: 16px;">
+      <!-- SVGとして生成された画像がここに入ります -->
+      <img id="heatmap-image" class="heatmap-image" alt="都道府県別ヒートマップ" draggable="false">
+      <div class="map-legend">
         <span>0%</span>
         <div class="legend-bar"></div>
         <span>100%</span>
@@ -736,8 +263,7 @@
       <input type="file" id="import-file" accept=".json" style="display:none">
       <button class="btn danger" id="reset-btn" style="margin-top:16px;">🗑️ すべてリセット</button>
       <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;">
-        データ出典：全国「道の駅」連絡会 + 国土数値情報「道の駅データ」(国土交通省、2019年) + OpenStreetMap Nominatim<br>
-        地図：© OpenStreetMap contributors<br>
+        データ出典：全国「道の駅」連絡会 + 国土数値情報「道の駅データ」(国土交通省) + OpenStreetMap Nominatim<br>
         端末ID: <span id="device-id">-</span>
       </p>
     </div>
@@ -775,9 +301,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 
 <script>
-/* ============================================================
- *  Firebase 設定
- * ============================================================ */
 const FIREBASE_CONFIG = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -787,746 +310,363 @@ const FIREBASE_CONFIG = {
   appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
 };
 
-// スタンプ判定距離（メートル）
 const STAMP_RADIUS_M = 100;
 
-// ===== グローバル状態 =====
 const state = {
-  stations: [],
-  visited: {},
-  pos: null,             // {lat, lon, acc, isApprox: true/false}
-  watchId: null,
-  map: null,
-  markers: {},
-  posMarker: null,
-  posCircle: null,
-  currentStation: null,
-  firebaseReady: false,
-  deviceId: null,
+  stations: [], visited: {}, pos: null, watchId: null, map: null, markers: {}, posMarker: null, posCircle: null, currentStation: null, firebaseReady: false, deviceId: null,
 };
 
-// ===== 距離計算（Haversine 公式）=====
 function distance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  const a = Math.sin(toRad(lat2 - lat1)/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(toRad(lon2 - lon1)/2)**2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
-function fmtDist(m) {
-  if (m == null) return "距離不明";
-  if (m < 1000) return `${Math.round(m)}m`;
-  return `${(m/1000).toFixed(1)}km`;
-}
-
-function getLocationLabel(pos) {
-  if (!pos) return '位置情報なし';
-  if (pos.locationName) return pos.locationName;
-  if (pos.regionName) return pos.regionName;
-  return `${pos.lat.toFixed(4)}, ${pos.lon.toFixed(4)}`;
-}
+function fmtDist(m) { return m == null ? "距離不明" : (m < 1000 ? `${Math.round(m)}m` : `${(m/1000).toFixed(1)}km`); }
+function getLocationLabel(pos) { return pos ? pos.locationName || pos.regionName || `${pos.lat.toFixed(4)}, ${pos.lon.toFixed(4)}` : '位置情報なし'; }
 
 function buildLocationName(address, fallback = '現在地') {
   if (!address) return fallback;
-
-  // 1. 都道府県を取得
-  const stateName = address.state || address.province || address.region || '';
-  
-  // 2. 市区町村を取得
-  const cityName = address.city || address.town || address.village || address.municipality || address.county || '';
-  
-  // 3. 地区・町名を取得
-  const districtName = address.suburb || address.neighbourhood || address.city_district || '';
-
-  // 取得できた要素を順につなげる
-  let result = '';
-  if (stateName) result += stateName;
-  if (cityName && !result.includes(cityName)) result += cityName;
-  if (districtName && !result.includes(districtName)) result += districtName;
-
-  return result || fallback;
+  const s = address.state || address.province || address.region || '';
+  const c = address.city || address.town || address.village || address.municipality || address.county || '';
+  const d = address.suburb || address.neighbourhood || address.city_district || '';
+  let res = '';
+  if (s) res += s;
+  if (c && !res.includes(c)) res += c;
+  if (d && !res.includes(d)) res += d;
+  return res || fallback;
 }
 
 async function reverseGeocode(lat, lon) {
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`, {
-      headers: { 'Accept-Language': 'ja' }
-    });
-    if (!res.ok) throw new Error('reverse geo failed');
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`, { headers: { 'Accept-Language': 'ja' } });
+    if (!res.ok) throw new Error('geo failed');
     const data = await res.json();
-    const addr = data && data.address ? data.address : {};
-    const label = buildLocationName(addr, data && data.display_name ? data.display_name.split(',').slice(0, 3).join(',') : '現在地');
-    return { displayName: label, address: addr };
-  } catch (e) {
-    console.warn('Reverse geocode failed:', e);
-    return null;
-  }
+    return { displayName: buildLocationName(data?.address, data?.display_name?.split(',').slice(0,3).join(',') || '現在地'), address: data?.address || {} };
+  } catch (e) { return null; }
 }
 
-// ===== トースト =====
 function toast(msg, dur=2500) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), dur);
 }
 
-// ===== 端末ID =====
 function getDeviceId() {
   let id = localStorage.getItem('mne-device-id');
-  if (!id) {
-    id = 'dev-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    localStorage.setItem('mne-device-id', id);
-  }
+  if (!id) { id = 'dev-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('mne-device-id', id); }
   return id;
 }
 
-// ===== Firebase 初期化 =====
-let db = null, auth = null;
 async function initFirebase() {
-  if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") {
-    console.warn("Firebase未設定：localStorage のみで動作します");
-    return false;
-  }
+  if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") return false;
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
-    auth = firebase.auth();
-    await auth.signInAnonymously();
-    state.deviceId = auth.currentUser.uid;
+    firebase.initializeApp(FIREBASE_CONFIG); db = firebase.firestore(); auth = firebase.auth();
+    await auth.signInAnonymously(); state.deviceId = auth.currentUser.uid;
     document.getElementById('device-id').textContent = state.deviceId.slice(0,8) + '...';
-
     const doc = await db.collection('users').doc(state.deviceId).get();
     if (doc.exists) state.visited = doc.data().visited || {};
-
-    db.collection('users').doc(state.deviceId).onSnapshot(d => {
-      if (d.exists) {
-        state.visited = d.data().visited || {};
-        render();
-      }
-    });
-
-    state.firebaseReady = true;
-    return true;
-  } catch (e) {
-    console.error("Firebase init failed:", e);
-    toast("クラウド同期不可、端末内保存で動作");
-    return false;
-  }
+    db.collection('users').doc(state.deviceId).onSnapshot(d => { if (d.exists) { state.visited = d.data().visited || {}; render(); } });
+    state.firebaseReady = true; return true;
+  } catch (e) { return false; }
 }
 
-// ===== 訪問データの保存 =====
 async function saveVisited() {
   localStorage.setItem('mne-visited', JSON.stringify(state.visited));
   if (state.firebaseReady && db) {
-    try {
-      await db.collection('users').doc(state.deviceId)
-        .set({ visited: state.visited, updated: Date.now() }, { merge: true });
-    } catch (e) {
-      console.error("cloud save failed:", e);
-    }
+    try { await db.collection('users').doc(state.deviceId).set({ visited: state.visited, updated: Date.now() }, { merge: true }); } catch (e) {}
   }
 }
 
-// ===== データ読込 =====
 async function loadStations() {
-  const res = await fetch('stations.json');
-  const data = await res.json();
+  const res = await fetch('stations.json'); const data = await res.json();
   state.stations = data.stations.filter(s => s.lat && s.lon);
   const stored = localStorage.getItem('mne-visited');
   if (stored) state.visited = JSON.parse(stored);
 }
 
-// ===== IP / ネットワークによるおおよその位置情報取得（フォールバック） =====
 async function fetchIPLocation() {
   toast("GPSオフのため、ネットワークからおおよその位置を取得中…");
-
-  let lat = null, lon = null, locationHint = '';
-
-  try {
-    const res = await fetch('https://ipwho.is/');
-    const data = await res.json();
-    if (data && data.success) {
-      lat = data.latitude;
-      lon = data.longitude;
-      locationHint = [data.region, data.city].filter(Boolean).join('');
-    }
-  } catch (e) {
-    console.warn("ipwho.is failed:", e);
-  }
-
-  if (lat == null || lon == null) {
-    try {
-      const res = await fetch('https://ipapi.co/json/');
-      const data = await res.json();
-      if (data && data.latitude && data.longitude) {
-        lat = parseFloat(data.latitude);
-        lon = parseFloat(data.longitude);
-        locationHint = [data.region, data.city].filter(Boolean).join('');
-      }
-    } catch (e) {
-      console.warn("ipapi.co failed:", e);
-    }
-  }
-
-  if (lat == null || lon == null) {
-    try {
-      const res = await fetch('https://ip-api.com/json/?lang=ja');
-      const data = await res.json();
-      if (data && data.status === 'success') {
-        lat = data.lat;
-        lon = data.lon;
-        locationHint = [data.regionName, data.city].filter(Boolean).join('');
-      }
-    } catch (e) {
-      console.warn("ip-api.com failed:", e);
-    }
-  }
-
-  if (lat != null && lon != null) {
-    const geoResult = await reverseGeocode(lat, lon);
-    const displayName = geoResult ? geoResult.displayName : (locationHint || 'IP位置推計');
-
-    state.pos = {
-      lat: lat,
-      lon: lon,
-      acc: 5000,
-      isApprox: true,
-      regionName: displayName,
-      locationName: displayName
-    };
-
-    toast(`おおよその位置を取得しました (${displayName})`);
-    updatePosMarker();
-    render();
-  } else {
-    toast("位置情報の取得に失敗しました");
-  }
-
+  let lat = null, lon = null, hint = '';
+  try { const r = await fetch('https://ipwho.is/'); const d = await r.json(); if(d?.success) { lat=d.latitude; lon=d.longitude; hint=[d.region, d.city].join(''); } } catch(e){}
+  if(lat==null){ try { const r=await fetch('https://ipapi.co/json/'); const d=await r.json(); if(d?.latitude) { lat=parseFloat(d.latitude); lon=parseFloat(d.longitude); hint=[d.region, d.city].join(''); } }catch(e){} }
+  if(lat!=null){
+    const geo = await reverseGeocode(lat, lon);
+    const name = geo ? geo.displayName : (hint || 'IP位置推計');
+    state.pos = { lat, lon, acc:5000, isApprox:true, regionName:name, locationName:name };
+    toast(`おおよその位置を取得しました (${name})`); updatePosMarker(); render();
+  } else toast("位置情報の取得に失敗しました");
   document.getElementById('locate-btn').classList.remove('on');
 }
 
-// ===== 現在地取得 =====
 function startGeo() {
-  if (!navigator.geolocation) {
-    fetchIPLocation();
-    return;
-  }
+  if (!navigator.geolocation) return fetchIPLocation();
   document.getElementById('locate-btn').classList.add('on');
   state.watchId = navigator.geolocation.watchPosition(
     async pos => {
-      state.pos = {
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-        acc: pos.coords.accuracy,
-        isApprox: false,
-        locationName: '現在地を取得中…'
-      };
-      const result = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-      if (result) {
-        state.pos.locationName = result.displayName;
-        state.pos.regionName = result.displayName;
-        state.pos.address = result.address;
-      }
-      updatePosMarker();
-      render();
+      state.pos = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, isApprox: false, locationName: '現在地を取得中…' };
+      const geo = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+      if (geo) { state.pos.locationName = geo.displayName; state.pos.regionName = geo.displayName; state.pos.address = geo.address; }
+      updatePosMarker(); render();
     },
-    err => {
-      console.warn("GPS Location error, fallback to IP location:", err);
-      fetchIPLocation();
-    },
+    err => fetchIPLocation(),
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
   );
 }
+function stopGeo() { if (state.watchId!=null) navigator.geolocation.clearWatch(state.watchId); state.watchId=null; document.getElementById('locate-btn').classList.remove('on'); }
 
-function stopGeo() {
-  if (state.watchId != null) navigator.geolocation.clearWatch(state.watchId);
-  state.watchId = null;
-  document.getElementById('locate-btn').classList.remove('on');
-}
-
-// ===== 地図 =====
 function initMap() {
   state.map = L.map('map', { zoomControl: true }).setView([36.5, 138], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 18
-  }).addTo(state.map);
-
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(state.map);
   state.stations.forEach(s => {
-    const visited = !!state.visited[s.id];
-    const color = visited ? '#4caf50' : '#90a4ae';
-    const icon = L.divIcon({
-      className: 'st-marker',
-      html: `<div style="background:${color};width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.5);"></div>`,
-      iconSize: [16,16], iconAnchor: [8,8]
-    });
-    const m = L.marker([s.lat, s.lon], { icon })
-      .bindTooltip(s.name, { direction: 'top' })
-      .on('click', () => openStation(s));
-    m.addTo(state.map);
-    state.markers[s.id] = m;
+    const color = state.visited[s.id] ? '#4caf50' : '#90a4ae';
+    const icon = L.divIcon({ className: 'st-marker', html: `<div style="background:${color};width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.5);"></div>`, iconSize: [16,16], iconAnchor: [8,8] });
+    const m = L.marker([s.lat, s.lon], { icon }).bindTooltip(s.name, { direction: 'top' }).on('click', () => openStation(s));
+    m.addTo(state.map); state.markers[s.id] = m;
   });
 }
-
 function updateMapMarkers() {
   Object.entries(state.markers).forEach(([id, m]) => {
-    const visited = !!state.visited[id];
-    const color = visited ? '#4caf50' : '#90a4ae';
-    m.setIcon(L.divIcon({
-      className: 'st-marker',
-      html: `<div style="background:${color};width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.5);"></div>`,
-      iconSize: [16,16], iconAnchor: [8,8]
-    }));
+    const color = state.visited[id] ? '#4caf50' : '#90a4ae';
+    m.setIcon(L.divIcon({ className: 'st-marker', html: `<div style="background:${color};width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.5);"></div>`, iconSize: [16,16], iconAnchor: [8,8] }));
   });
 }
-
 function updatePosMarker() {
   if (!state.pos || !state.map) return;
-  const { lat, lon, acc, isApprox } = state.pos;
-  const color = isApprox ? '#ff9800' : '#2196f3';
-
+  const { lat, lon, acc, isApprox } = state.pos; const color = isApprox ? '#ff9800' : '#2196f3';
   if (!state.posMarker) {
-    state.posMarker = L.circleMarker([lat, lon], {
-      radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1
-    }).addTo(state.map);
-    
-    state.posCircle = L.circle([lat, lon], {
-      radius: acc, color: color, weight: 1, fillOpacity: 0.1, dashArray: isApprox ? '4, 4' : null
-    }).addTo(state.map);
-    
-    state.map.setView([lat, lon], isApprox ? 10 : 13);
+    state.posMarker = L.circleMarker([lat, lon], { radius:8, color:'#fff', weight:2, fillColor:color, fillOpacity:1 }).addTo(state.map);
+    state.posCircle = L.circle([lat, lon], { radius:acc, color, weight:1, fillOpacity:0.1, dashArray: isApprox?'4, 4':null }).addTo(state.map);
+    state.map.setView([lat, lon], isApprox?10:13);
   } else {
-    state.posMarker.setLatLng([lat, lon]);
-    state.posMarker.setStyle({ fillColor: color });
-    state.posCircle.setLatLng([lat, lon]).setRadius(acc).setStyle({ color: color, dashArray: isApprox ? '4, 4' : null });
+    state.posMarker.setLatLng([lat, lon]).setStyle({ fillColor: color });
+    state.posCircle.setLatLng([lat, lon]).setRadius(acc).setStyle({ color, dashArray: isApprox?'4, 4':null });
   }
 }
 
-// ===== リスト描画 =====
 function render() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   const filter = document.getElementById('filter').value;
-
   let approxBanner = document.getElementById('approx-banner');
   if (state.pos) {
-    const locationText = getLocationLabel(state.pos);
     if (state.pos.isApprox) {
-      if (!approxBanner) {
-        approxBanner = document.createElement('div');
-        approxBanner.id = 'approx-banner';
-        approxBanner.className = 'approx-banner';
-        const listView = document.getElementById('list-view');
-        listView.insertBefore(approxBanner, listView.children[1]);
-      }
-      approxBanner.innerHTML = `⚠️ GPS未取得のため、ネットワークによる<b>おおよその現在地</b>を表示しています<br>📍 ${escapeHtml(locationText)}`;
-    } else if (approxBanner) {
-      approxBanner.remove();
-    }
-  } else if (approxBanner) {
-    approxBanner.remove();
-  }
+      if (!approxBanner) { approxBanner = document.createElement('div'); approxBanner.id = 'approx-banner'; approxBanner.className = 'approx-banner'; const lv = document.getElementById('list-view'); lv.insertBefore(approxBanner, lv.children[1]); }
+      approxBanner.innerHTML = `⚠️ GPS未取得のため、ネットワークによる<b>おおよその現在地</b>を表示しています<br>📍 ${escapeHtml(getLocationLabel(state.pos))}`;
+    } else if (approxBanner) approxBanner.remove();
+  } else if (approxBanner) approxBanner.remove();
 
   updateLocationBar();
 
-  let items = state.stations.map(s => {
-    const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
-    return { ...s, _dist: dist, _visited: !!state.visited[s.id] };
-  });
-
-  if (q) {
-    items = items.filter(s =>
-      s.name.toLowerCase().includes(q) ||
-      s.pref.toLowerCase().includes(q) ||
-      (s.addr || '').toLowerCase().includes(q)
-    );
-  }
+  let items = state.stations.map(s => ({ ...s, _dist: state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null, _visited: !!state.visited[s.id] }));
+  if (q) items = items.filter(s => s.name.toLowerCase().includes(q) || s.pref.toLowerCase().includes(q) || (s.addr || '').toLowerCase().includes(q));
   if (filter === 'unvisited') items = items.filter(s => !s._visited);
   if (filter === 'visited') items = items.filter(s => s._visited);
 
-  if (state.pos) {
-    items.sort((a, b) => {
-      if (a._visited !== b._visited) return a._visited ? 1 : -1;
-      if (!a._visited) return a._dist - b._dist;
-      return (state.visited[b.id]?.ts || 0) - (state.visited[a.id]?.ts || 0);
-    });
-  } else {
-    items.sort((a, b) => {
-      if (a._visited !== b._visited) return a._visited ? 1 : -1;
-      return a.pref.localeCompare(b.pref, 'ja');
-    });
-  }
+  if (state.pos) items.sort((a, b) => a._visited !== b._visited ? (a._visited?1:-1) : (!a._visited ? a._dist - b._dist : (state.visited[b.id]?.ts||0) - (state.visited[a.id]?.ts||0)));
+  else items.sort((a, b) => a._visited !== b._visited ? (a._visited?1:-1) : a.pref.localeCompare(b.pref, 'ja'));
 
   const body = document.getElementById('list-body');
-  if (items.length === 0) {
-    body.innerHTML = '<div class="empty">該当する道の駅はありません</div>';
-  } else {
+  if (items.length === 0) body.innerHTML = '<div class="empty">該当する道の駅はありません</div>';
+  else {
     body.innerHTML = items.slice(0, 300).map(s => {
       const near = s._dist != null && s._dist <= STAMP_RADIUS_M && !s._visited && !state.pos?.isApprox;
       const cls = ['station-item', s._visited ? 'visited' : '', near ? 'near' : ''].join(' ');
-      const icon = s._visited ? '✓' : (near ? '🎯' : '📍');
-      const distText = s._visited
-        ? '訪問済'
-        : (s._dist != null ? (state.pos?.isApprox ? `約${fmtDist(s._dist)}` : fmtDist(s._dist)) : '—');
-      return `
-        <div class="${cls}" data-id="${escapeHtml(s.id)}">
-          <div class="station-icon">${icon}</div>
-          <div class="station-info">
-            <div class="station-name">${escapeHtml(s.name)}</div>
-            <div class="station-meta">
-              <span>${escapeHtml(s.pref)}</span>
-              <span>${escapeHtml(s.addr || '')}</span>
-            </div>
-          </div>
-          <div class="station-dist">${distText}</div>
-        </div>`;
+      const distText = s._visited ? '訪問済' : (s._dist != null ? (state.pos?.isApprox ? `約${fmtDist(s._dist)}` : fmtDist(s._dist)) : '—');
+      return `<div class="${cls}" data-id="${escapeHtml(s.id)}"><div class="station-icon">${s._visited ? '✓' : (near ? '🎯' : '📍')}</div><div class="station-info"><div class="station-name">${escapeHtml(s.name)}</div><div class="station-meta"><span>${escapeHtml(s.pref)}</span><span>${escapeHtml(s.addr || '')}</span></div></div><div class="station-dist">${distText}</div></div>`;
     }).join('');
-
-    body.querySelectorAll('.station-item').forEach(el => {
-      el.addEventListener('click', () => {
-        const s = state.stations.find(x => String(x.id) === el.dataset.id);
-        if (s) openStation(s);
-      });
-    });
-    if (items.length > 300) {
-      body.insertAdjacentHTML('beforeend', `<div class="empty">…他 ${items.length - 300} 駅（検索で絞り込んでください）</div>`);
-    }
+    body.querySelectorAll('.station-item').forEach(el => el.addEventListener('click', () => { const s = state.stations.find(x => String(x.id) === el.dataset.id); if (s) openStation(s); }));
+    if (items.length > 300) body.insertAdjacentHTML('beforeend', `<div class="empty">…他 ${items.length - 300} 駅</div>`);
   }
-
-  updateProgress();
-  if (state.map) updateMapMarkers();
+  updateProgress(); if (state.map) updateMapMarkers();
 }
 
 function updateLocationBar() {
-  const bar = document.getElementById('location-bar');
-  const label = document.getElementById('location-name');
-  if (!state.pos || state.pos.isApprox) {
-    bar.classList.add('hidden');
-    return;
-  }
-  const name = getLocationLabel(state.pos);
-  label.textContent = name || '現在地を取得中…';
-  bar.classList.remove('hidden');
+  const bar = document.getElementById('location-bar'); const label = document.getElementById('location-name');
+  if (!state.pos || state.pos.isApprox) return bar.classList.add('hidden');
+  label.textContent = getLocationLabel(state.pos) || '現在地を取得中…'; bar.classList.remove('hidden');
 }
 
 function updateProgress() {
-  const total = state.stations.length;
-  const done = Object.keys(state.visited).length;
-  const pct = total ? (done/total*100).toFixed(1) : 0;
-  document.getElementById('badge-count').textContent = `${done} / ${total}`;
-  document.getElementById('badge-pct').textContent = `制覇 ${pct}%`;
-  document.getElementById('stat-count').textContent = done;
-  document.getElementById('stat-pct').textContent = pct;
-  document.getElementById('stat-bar').style.width = pct + '%';
-
-  const byPref = {};
-  state.stations.forEach(s => {
-    if (!byPref[s.pref]) byPref[s.pref] = { done: 0, total: 0 };
-    byPref[s.pref].total++;
-    if (state.visited[s.id]) byPref[s.pref].done++;
-  });
-
-  // 都道府県リスト表示
-  const html = Object.entries(byPref)
-    .sort((a,b) => b[1].done/b[1].total - a[1].done/a[1].total)
-    .map(([pref, c]) => {
-      const isDone = c.done === c.total && c.total > 0;
-      return `<div class="pref-row ${isDone ? 'done' : ''}">
-        <span>${isDone ? '👑 ' : ''}${escapeHtml(pref)}</span>
-        <span class="count">${c.done} / ${c.total}</span>
-      </div>`;
-    }).join('');
-  document.getElementById('pref-list').innerHTML = html;
-
-  // 都道府県ボタンのヒートマップを更新
-  Object.entries(byPref).forEach(([pref, c]) => {
-    // 都道府県コード（英字）と日本語名のマッピング
-    const prefMap = {
-      '北海道': 'hokkaido',
-      '青森県': 'aomori',
-      '岩手県': 'iwate',
-      '宮城県': 'miyagi',
-      '秋田県': 'akita',
-      '山形県': 'yamagata',
-      '福島県': 'fukushima',
-      '茨城県': 'ibaraki',
-      '栃木県': 'tochigi',
-      '群馬県': 'gunma',
-      '埼玉県': 'saitama',
-      '千葉県': 'chiba',
-      '東京都': 'tokyo',
-      '神奈川県': 'kanagawa',
-      '新潟県': 'nigata',
-      '富山県': 'toyama',
-      '石川県': 'ishikawa',
-      '福井県': 'fukui',
-      '山梨県': 'yamanashi',
-      '長野県': 'nagano',
-      '岐阜県': 'gifu',
-      '静岡県': 'shizuoka',
-      '愛知県': 'aichi',
-      '三重県': 'mie',
-      '滋賀県': 'shiga',
-      '京都府': 'kyoto',
-      '大阪府': 'osaka',
-      '兵庫県': 'hyougo',
-      '奈良県': 'nara',
-      '和歌山県': 'wakayama',
-      '鳥取県': 'tottori',
-      '島根県': 'shimane',
-      '岡山県': 'okayama',
-      '広島県': 'hiroshima',
-      '山口県': 'yamaguchi',
-      '徳島県': 'tokushima',
-      '香川県': 'kagawa',
-      '愛媛県': 'ehime',
-      '高知県': 'kouchi',
-      '福岡県': 'fukuoka',
-      '佐賀県': 'saga',
-      '長崎県': 'nagasaki',
-      '熊本県': 'kumamoto',
-      '大分県': 'oita',
-      '宮崎県': 'miyazaki',
-      '鹿児島県': 'kagoshima',
-      '沖縄県': 'okinawa'
-    };
-
-    const btnId = prefMap[pref];
-    const el = document.getElementById(btnId);
-    if (el) {
-      const ratio = c.total > 0 ? c.done / c.total : 0;
-      
-      // レベルクラスを設定
-      el.classList.remove('pref-level-0', 'pref-level-1', 'pref-level-2', 'pref-level-3', 'pref-level-4', 'pref-done');
-      
-      if (ratio === 0) el.classList.add('pref-level-0');
-      else if (ratio <= 0.25) el.classList.add('pref-level-1');
-      else if (ratio <= 0.5) el.classList.add('pref-level-2');
-      else if (ratio < 1.0) el.classList.add('pref-level-3');
-      else {
-        el.classList.add('pref-level-4', 'pref-done');
-      }
-
-      // クリックイベントで制覇率を表示
-      el.onclick = () => {
-        const pctVal = (ratio * 100).toFixed(1);
-        toast(`【${pref}】 制覇率 ${pctVal}% (${c.done}/${c.total}駅)`);
-      };
-    }
-  });
+  const total = state.stations.length; const done = Object.keys(state.visited).length; const pct = total ? (done/total*100).toFixed(1) : 0;
+  document.getElementById('badge-count').textContent = `${done} / ${total}`; document.getElementById('badge-pct').textContent = `制覇 ${pct}%`;
+  document.getElementById('stat-count').textContent = done; document.getElementById('stat-pct').textContent = pct; document.getElementById('stat-bar').style.width = pct + '%';
+  const byPref = {}; state.stations.forEach(s => { if (!byPref[s.pref]) byPref[s.pref] = { done: 0, total: 0 }; byPref[s.pref].total++; if (state.visited[s.id]) byPref[s.pref].done++; });
+  document.getElementById('pref-list').innerHTML = Object.entries(byPref).sort((a,b) => b[1].done/b[1].total - a[1].done/a[1].total).map(([p, c]) => `<div class="pref-row ${c.done===c.total&&c.total>0?'done':''}"><span>${c.done===c.total&&c.total>0?'👑 ':''}${escapeHtml(p)}</span><span class="count">${c.done} / ${c.total}</span></div>`).join('');
+  
+  // ヒートマップ画像の描画
+  renderHeatmapImage(byPref);
 }
 
-// ===== モーダル =====
+// -------------------------------------------------------------
+// 【新機能】日本地図SVGの動的生成
+// -------------------------------------------------------------
+const MAP_LAYOUT = {
+  regions: {
+    hk: {rx:82.5, ry:0, rw:17.5, rh:55},
+    kt: {rx:80, ry:55, rw:20, rh:36},
+    tb: {rx:56.3, ry:46, rw:34.7, rh:44},
+    kk: {rx:41.1, ry:46, rw:23.9, rh:44},
+    cg: {rx:21.8, ry:46, rw:19.4, rh:20},
+    sk: {rx:21.8, ry:72.6, rw:23.7, rh:17.4},
+    ks: {rx:0, ry:49, rw:19.6, rh:51}
+  },
+  prefs: [
+    {name:'北海道', s:'北海道', r:'hk', px:0, py:0, pw:100, ph:26.4},
+    {name:'青森県', s:'青森', r:'hk', px:15.4, py:36.2, pw:68.4, ph:16.2},
+    {name:'秋田県', s:'秋田', r:'hk', px:2.2, py:52.5, pw:49, ph:15.8},
+    {name:'岩手県', s:'岩手', r:'hk', px:51.5, py:52.5, pw:49, ph:15.8},
+    {name:'山形県', s:'山形', r:'hk', px:2.2, py:68.2, pw:49, ph:15.8},
+    {name:'宮城県', s:'宮城', r:'hk', px:51.5, py:68.2, pw:49, ph:15.8},
+    {name:'福島県', s:'福島', r:'hk', px:51.5, py:83.8, pw:49, ph:15.8},
+    {name:'群馬県', s:'群馬', r:'kt', px:0, py:0, pw:31.6, ph:24},
+    {name:'栃木県', s:'栃木', r:'kt', px:32, py:0, pw:31.6, ph:24},
+    {name:'茨城県', s:'茨城', r:'kt', px:63.3, py:0, pw:32.9, ph:48.8},
+    {name:'埼玉県', s:'埼玉', r:'kt', px:0, py:24.1, pw:63.3, ph:24},
+    {name:'千葉県', s:'千葉', r:'kt', px:63.3, py:48.8, pw:32.9, ph:48.8},
+    {name:'東京都', s:'東京', r:'kt', px:0, py:48.8, pw:63.3, ph:24},
+    {name:'神奈川県', s:'神奈川', r:'kt', px:0, py:72.9, pw:42.4, ph:24},
+    {name:'新潟県', s:'新潟', r:'tb', px:68.5, py:0, pw:31.5, ph:19.9},
+    {name:'富山県', s:'富山', r:'tb', px:43.7, py:0, pw:24.8, ph:19.9},
+    {name:'石川県', s:'石川', r:'tb', px:25.2, py:0, pw:18.5, ph:27},
+    {name:'福井県', s:'福井', r:'tb', px:0, py:0, pw:25.2, ph:19.9},
+    {name:'長野県', s:'長野', r:'tb', px:43.7, py:19.9, pw:24.8, ph:40.3},
+    {name:'山梨県', s:'山梨', r:'tb', px:43.7, py:60.2, pw:24.8, ph:19.9},
+    {name:'岐阜県', s:'岐阜', r:'tb', px:25.2, py:27, pw:18.5, ph:26},
+    {name:'静岡県', s:'静岡', r:'tb', px:43.7, py:80.1, pw:24.8, ph:19.9},
+    {name:'愛知県', s:'愛知', r:'tb', px:25.2, py:53, pw:18.5, ph:27},
+    {name:'京都府', s:'京都', r:'kk', px:27.4, py:0, pw:36, ph:39.8},
+    {name:'滋賀県', s:'滋賀', r:'kk', px:63.4, py:19.9, pw:36.6, ph:19.9},
+    {name:'大阪府', s:'大阪', r:'kk', px:27.4, py:39.8, pw:36, ph:40.3},
+    {name:'奈良県', s:'奈良', r:'kk', px:63.4, py:39.8, pw:18.3, ph:40.3},
+    {name:'三重県', s:'三重', r:'kk', px:81.7, py:39.8, pw:18.3, ph:40.3},
+    {name:'和歌山県', s:'和歌山', r:'kk', px:32.8, py:80.1, pw:60.8, ph:19.9},
+    {name:'兵庫県', s:'兵庫', r:'kk', px:0, py:0, pw:27.4, ph:46.3},
+    {name:'鳥取県', s:'鳥取', r:'cg', px:66.9, py:0, pw:33, ph:50},
+    {name:'岡山県', s:'岡山', r:'cg', px:66.9, py:50, pw:33, ph:50},
+    {name:'島根県', s:'島根', r:'cg', px:33, py:0, pw:33.8, ph:50},
+    {name:'広島県', s:'広島', r:'cg', px:33, py:50, pw:33.8, ph:50},
+    {name:'山口県', s:'山口', r:'cg', px:0, py:0, pw:33, ph:100},
+    {name:'香川県', s:'香川', r:'sk', px:50, py:0, pw:50, ph:50},
+    {name:'愛媛県', s:'愛媛', r:'sk', px:0, py:0, pw:50, ph:50},
+    {name:'徳島県', s:'徳島', r:'sk', px:50, py:50, pw:50, ph:50},
+    {name:'高知県', s:'高知', r:'sk', px:0, py:50, pw:50, ph:50},
+    {name:'福岡県', s:'福岡', r:'ks', px:66.4, py:0, pw:33, ph:20.2},
+    {name:'佐賀県', s:'佐賀', r:'ks', px:33.6, py:0, pw:33, ph:20.2},
+    {name:'長崎県', s:'長崎', r:'ks', px:0, py:0, pw:33, ph:20.2},
+    {name:'大分県', s:'大分', r:'ks', px:66.4, py:20.2, pw:33, ph:20.2},
+    {name:'熊本県', s:'熊本', r:'ks', px:33.6, py:20.2, pw:33, ph:40.5},
+    {name:'宮崎県', s:'宮崎', r:'ks', px:66.4, py:40.5, pw:33, ph:20.2},
+    {name:'鹿児島県', s:'鹿児島', r:'ks', px:54.6, py:60.7, pw:44.8, ph:19.8},
+    {name:'沖縄県', s:'沖縄', r:'ks', px:0, py:79.9, pw:33, ph:20.2}
+  ]
+};
+
+function renderHeatmapImage(byPref) {
+  const imgEl = document.getElementById('heatmap-image');
+  if (!imgEl) return;
+  const W = 800, H = 482; let cells = '';
+
+  MAP_LAYOUT.prefs.forEach(p => {
+    const r = MAP_LAYOUT.regions[p.r];
+    const rw = W * (r.rw / 100), rh = H * (r.rh / 100);
+    const x = W * (r.rx / 100) + rw * (p.px / 100), y = H * (r.ry / 100) + rh * (p.py / 100);
+    const w = rw * (p.pw / 100), h = rh * (p.ph / 100);
+
+    let fill = '#e0e0e0';
+    if (byPref && byPref[p.name]) {
+      const c = byPref[p.name], ratio = c.total > 0 ? c.done / c.total : 0;
+      if (ratio === 0) fill = '#e0e0e0';
+      else if (ratio <= 0.25) fill = '#c8e6c9';
+      else if (ratio <= 0.5) fill = '#81c784';
+      else if (ratio < 1.0) fill = '#4caf50';
+      else fill = '#1b5e20';
+    }
+    cells += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="#ffffff" stroke-width="1.5" />
+              <text x="${x + w/2}" y="${y + h/2 + 4}" text-anchor="middle" font-size="11" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="600" fill="#333">${p.s}</text>`;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="transparent" />${cells}</svg>`;
+  imgEl.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.trim());
+}
+// -------------------------------------------------------------
+
 function openStation(s) {
-  state.currentStation = s;
-  const visited = !!state.visited[s.id];
+  state.currentStation = s; const visited = !!state.visited[s.id];
   const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
   const isApprox = state.pos && state.pos.isApprox;
   const near = dist != null && dist <= STAMP_RADIUS_M && !isApprox;
 
-  document.getElementById('m-name').textContent = s.name;
-  document.getElementById('m-sub').textContent = `${s.pref} ${s.addr || ''}`;
+  document.getElementById('m-name').textContent = s.name; document.getElementById('m-sub').textContent = `${s.pref} ${s.addr || ''}`;
   document.getElementById('m-year').innerHTML = s.year ? `<b>登録:</b> ${escapeHtml(s.touroku || '')} (${escapeHtml(s.year)})` : '';
   document.getElementById('m-addr').innerHTML = `<b>座標:</b> ${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}`;
   document.getElementById('m-hp').innerHTML = s.hp ? `<b>HP:</b> <a href="${escapeHtml(s.hp)}" target="_blank" rel="noopener">公式ページ</a>` : '';
-  const fac = s.facilities || {};
   const facMap = { restaurant:'🍴レストラン', onsen:'♨️温泉', camp:'⛺キャンプ', ev:'🔌EV充電', wifi:'📶Wi-Fi', shop:'🛍️売店' };
-  const facList = Object.keys(fac).filter(k => fac[k]).map(k => facMap[k]).filter(Boolean).join(' ');
+  const facList = Object.keys(s.facilities||{}).filter(k => s.facilities[k]).map(k => facMap[k]).filter(Boolean).join(' ');
   document.getElementById('m-facil').innerHTML = facList ? `<b>施設:</b> ${facList}` : '';
-
-  const distLabel = !state.pos
-    ? '不明'
-    : isApprox
-      ? `約${fmtDist(dist)} (※おおよその位置)`
-      : `${fmtDist(dist)} (GPS精度 ±${Math.round(state.pos.acc)}m)`;
   document.getElementById('m-cur').innerHTML = '';
-  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${distLabel}`;
+  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${!state.pos?'不明':(isApprox?`約${fmtDist(dist)} (※概算)`:`${fmtDist(dist)} (精度 ±${Math.round(state.pos.acc)}m)`)}`;
 
-  const hint = document.getElementById('m-hint');
-  const btn = document.getElementById('m-stamp');
-  if (visited) {
-    const d = new Date(state.visited[s.id].ts);
-    hint.className = 'stamp-hint ok';
-    hint.textContent = `✅ ${d.toLocaleString('ja-JP')} にスタンプ済み`;
-    btn.textContent = '取り消す';
-    btn.className = 'btn danger';
-    btn.disabled = false;
-  } else if (!state.pos) {
-    hint.className = 'stamp-hint err';
-    hint.textContent = '📍 位置情報を有効にしてください';
-    btn.textContent = 'スタンプを押す';
-    btn.className = 'btn primary';
-    btn.disabled = true;
-  } else if (isApprox) {
-    hint.className = 'stamp-hint ng';
-    hint.textContent = '⚠️ 現在おおよその位置情報を利用中のため、スタンプ判定を行うには高精度GPSの許可が必要です';
-    btn.textContent = 'スタンプを押す';
-    btn.className = 'btn primary';
-    btn.disabled = true;
-  } else if (near) {
-    hint.className = 'stamp-hint ok';
-    hint.textContent = `🎯 半径${STAMP_RADIUS_M}m以内！スタンプが押せます`;
-    btn.textContent = '🎯 スタンプを押す';
-    btn.className = 'btn primary';
-    btn.disabled = false;
-  } else {
-    hint.className = 'stamp-hint ng';
-    hint.textContent = `あと ${fmtDist(dist - STAMP_RADIUS_M)} 近づくとスタンプできます`;
-    btn.textContent = 'スタンプを押す';
-    btn.className = 'btn primary';
-    btn.disabled = true;
-  }
+  const hint = document.getElementById('m-hint'), btn = document.getElementById('m-stamp');
+  if (visited) { hint.className = 'stamp-hint ok'; hint.textContent = `✅ ${new Date(state.visited[s.id].ts).toLocaleString('ja-JP')} にスタンプ済み`; btn.textContent = '取り消す'; btn.className = 'btn danger'; btn.disabled = false; }
+  else if (!state.pos) { hint.className = 'stamp-hint err'; hint.textContent = '📍 位置情報を有効にしてください'; btn.textContent = 'スタンプを押す'; btn.className = 'btn primary'; btn.disabled = true; }
+  else if (isApprox) { hint.className = 'stamp-hint ng'; hint.textContent = '⚠️ 現在おおよその位置情報を利用中のため、スタンプ判定を行うには高精度GPSの許可が必要です'; btn.textContent = 'スタンプを押す'; btn.className = 'btn primary'; btn.disabled = true; }
+  else if (near) { hint.className = 'stamp-hint ok'; hint.textContent = `🎯 半径${STAMP_RADIUS_M}m以内！スタンプが押せます`; btn.textContent = '🎯 スタンプを押す'; btn.className = 'btn primary'; btn.disabled = false; }
+  else { hint.className = 'stamp-hint ng'; hint.textContent = `あと ${fmtDist(dist - STAMP_RADIUS_M)} 近づくとスタンプできます`; btn.textContent = 'スタンプを押す'; btn.className = 'btn primary'; btn.disabled = true; }
 
-  const mapViewBtn = document.getElementById('m-show-map');
-  const isMapActive = document.getElementById('map-view').classList.contains('active');
-  mapViewBtn.style.display = isMapActive ? 'none' : 'block';
-
-  document.getElementById('m-nav').onclick = () => {
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, '_blank');
+  const mapBtn = document.getElementById('m-show-map'); mapBtn.style.display = document.getElementById('map-view').classList.contains('active') ? 'none' : 'block';
+  document.getElementById('m-nav').onclick = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, '_blank');
+  document.getElementById('m-nav-apple').onclick = () => window.open(`https://maps.apple.com/?daddr=${s.lat},${s.lon}&dirflg=d`, '_blank');
+  mapBtn.onclick = () => {
+    document.querySelectorAll('#tabs button, .view').forEach(x => x.classList.remove('active'));
+    document.querySelector('#tabs button[data-view="map-view"]').classList.add('active'); document.getElementById('map-view').classList.add('active');
+    if (state.map) setTimeout(() => { state.map.invalidateSize(); state.map.setView([s.lat, s.lon], 14); if(state.markers[s.id]) state.markers[s.id].openTooltip(); }, 100);
   };
-
-  document.getElementById('m-nav-apple').onclick = () => {
-    const appleUrl = `https://maps.apple.com/?daddr=${s.lat},${s.lon}&dirflg=d`;
-    window.open(appleUrl, '_blank');
-  };
-
-  mapViewBtn.onclick = () => {
-    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
-    
-    document.querySelector('#tabs button[data-view="map-view"]').classList.add('active');
-    document.getElementById('map-view').classList.add('active');
-    
-    if (state.map) {
-      setTimeout(() => {
-        state.map.invalidateSize();
-        state.map.setView([s.lat, s.lon], 14);
-        const marker = state.markers[s.id];
-        if (marker) marker.openTooltip();
-      }, 100);
-    }
-  };
-
   document.getElementById('modal').classList.add('show');
 }
-
-function closeModal() {
-  document.getElementById('modal').classList.remove('show');
-  state.currentStation = null;
-}
+function closeModal() { document.getElementById('modal').classList.remove('show'); state.currentStation = null; }
 
 async function doStamp() {
-  const s = state.currentStation;
-  if (!s) return;
-  const visited = !!state.visited[s.id];
-  if (visited) {
-    if (!confirm('スタンプを取り消しますか？')) return;
-    delete state.visited[s.id];
-    await saveVisited();
-    toast('スタンプを取り消しました');
+  const s = state.currentStation; if (!s) return;
+  if (state.visited[s.id]) {
+    if (!confirm('スタンプを取り消しますか？')) return; delete state.visited[s.id]; await saveVisited(); toast('取り消しました');
   } else {
-    if (!state.pos || state.pos.isApprox) {
-      toast('高精度GPSの位置情報が必要です');
-      return;
-    }
-    const d = distance(state.pos.lat, state.pos.lon, s.lat, s.lon);
-    if (d > STAMP_RADIUS_M) { toast('もう少し近づいてください'); return; }
-    state.visited[s.id] = { ts: Date.now(), lat: state.pos.lat, lon: state.pos.lon };
-    await saveVisited();
-    toast(`🎉 ${s.name} にスタンプ！`);
+    if (!state.pos || state.pos.isApprox) return toast('高精度GPSが必要です');
+    if (distance(state.pos.lat, state.pos.lon, s.lat, s.lon) > STAMP_RADIUS_M) return toast('もう少し近づいてください');
+    state.visited[s.id] = { ts: Date.now(), lat: state.pos.lat, lon: state.pos.lon }; await saveVisited(); toast(`🎉 ${s.name} にスタンプ！`);
   }
-  render();
-  openStation(s);
+  render(); openStation(s);
 }
 
-// ===== エクスポート／インポート／リセット =====
 function exportData() {
-  const blob = new Blob([JSON.stringify({ visited: state.visited, exported: new Date().toISOString() }, null, 2)],
-                       { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `michinoeki-stamps-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ visited: state.visited }, null, 2)], { type: 'application/json' }));
+  a.download = `michinoeki-stamps-${new Date().toISOString().slice(0,10)}.json`; a.click();
 }
 function importData(file) {
   const r = new FileReader();
-  r.onload = async e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.visited && confirm(`${Object.keys(data.visited).length} 件のスタンプを取り込みますか？（既存に追加）`)) {
-        Object.assign(state.visited, data.visited);
-        await saveVisited();
-        render();
-        toast('取り込みました');
-      }
-    } catch (e) { toast('JSON形式が不正です'); }
-  };
+  r.onload = async e => { try { const d = JSON.parse(e.target.result); if (d.visited && confirm(`${Object.keys(d.visited).length} 件のスタンプを取り込みますか？`)) { Object.assign(state.visited, d.visited); await saveVisited(); render(); toast('取り込みました'); } } catch(e){ toast('JSONが不正です'); } };
   r.readAsText(file);
 }
-async function resetAll() {
-  if (!confirm('本当に全スタンプを削除しますか？（元に戻せません）')) return;
-  state.visited = {};
-  await saveVisited();
-  render();
-  toast('リセットしました');
-}
+async function resetAll() { if (!confirm('全スタンプを削除しますか？')) return; state.visited = {}; await saveVisited(); render(); toast('リセットしました'); }
 
-// ===== ユーティリティ =====
-function escapeHtml(s) {
-  return String(s || '').replace(/[&<>"']/g, c =>
-    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}
+function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
-// ===== 初期化 =====
 async function init() {
   document.getElementById('device-id').textContent = getDeviceId().slice(0,10);
-  await initFirebase();
-  await loadStations();
-  initMap();
-  render();
-
-  // タブ切替
-  document.querySelectorAll('#tabs button').forEach(b => {
-    b.onclick = () => {
-      document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
-      document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      document.getElementById(b.dataset.view).classList.add('active');
-      if (b.dataset.view === 'map-view' && state.map) {
-        setTimeout(() => state.map.invalidateSize(), 100);
-      }
-    };
+  await initFirebase(); await loadStations(); initMap(); render();
+  document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#tabs button, .view').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); document.getElementById(b.dataset.view).classList.add('active');
+    if (b.dataset.view === 'map-view' && state.map) setTimeout(() => state.map.invalidateSize(), 100);
   });
-
-  document.getElementById('search').addEventListener('input', render);
-  document.getElementById('filter').addEventListener('change', render);
-  document.getElementById('m-stamp').addEventListener('click', doStamp);
-  document.getElementById('m-close').addEventListener('click', closeModal);
-  document.getElementById('reload-btn').addEventListener('click', () => window.location.reload());
-  document.getElementById('modal').addEventListener('click', e => {
-    if (e.target.id === 'modal') closeModal();
-  });
-  document.getElementById('locate-btn').addEventListener('click', () => {
-    if (state.watchId != null) stopGeo();
-    else startGeo();
-  });
-  document.getElementById('export-btn').addEventListener('click', exportData);
-  document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
-  document.getElementById('import-file').addEventListener('change', e => {
-    if (e.target.files[0]) importData(e.target.files[0]);
-  });
+  document.getElementById('search').addEventListener('input', render); document.getElementById('filter').addEventListener('change', render);
+  document.getElementById('m-stamp').addEventListener('click', doStamp); document.getElementById('m-close').addEventListener('click', closeModal);
+  document.getElementById('reload-btn').addEventListener('click', () => window.location.reload()); document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+  document.getElementById('locate-btn').addEventListener('click', () => { if (state.watchId != null) stopGeo(); else startGeo(); });
+  document.getElementById('export-btn').addEventListener('click', exportData); document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
+  document.getElementById('import-file').addEventListener('change', e => { if (e.target.files[0]) importData(e.target.files[0]); });
   document.getElementById('reset-btn').addEventListener('click', resetAll);
-
-  // 起動時に位置情報を求める
   startGeo();
-
-  document.getElementById('splash').classList.add('hide');
-  setTimeout(() => document.getElementById('splash').remove(), 500);
+  document.getElementById('splash').classList.add('hide'); setTimeout(() => document.getElementById('splash').remove(), 500);
 }
-
 init();
 </script>
 </body>
