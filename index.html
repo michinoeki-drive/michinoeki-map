@@ -321,18 +321,24 @@ function getLocationLabel(pos) {
 }
 
 function buildLocationName(address, fallback = '現在地') {
-  const stateName = address?.state || address?.region || '';
-  const cityName = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
-  const districtName = address?.suburb || address?.neighbourhood || address?.city_district || '';
+  if (!address) return fallback;
 
-  const candidate = [stateName, cityName, districtName].filter(Boolean);
-  if (candidate.length) {
-    if (candidate.length === 1 && cityName && !stateName) {
-      return cityName;
-    }
-    return candidate.join(' ');
-  }
-  return fallback;
+  // 1. 都道府県を取得（state: 東京都/埼玉県/大阪府など, province, region）
+  const stateName = address.state || address.province || address.region || '';
+  
+  // 2. 市区町村を取得
+  const cityName = address.city || address.town || address.village || address.municipality || address.county || '';
+  
+  // 3. 地区・町名を取得
+  const districtName = address.suburb || address.neighbourhood || address.city_district || '';
+
+  // 取得できた要素を順につなげる
+  let result = '';
+  if (stateName) result += stateName;
+  if (cityName && !result.includes(cityName)) result += cityName;
+  if (districtName && !result.includes(districtName)) result += districtName;
+
+  return result || fallback;
 }
 
 async function reverseGeocode(lat, lon) {
@@ -657,7 +663,7 @@ function updateLocationBar() {
     return;
   }
   const name = getLocationLabel(state.pos);
-  label.textContent = name || '埼玉県桶川市';
+  label.textContent = name || '現在地を取得中…';
   bar.classList.remove('hidden');
 }
 
