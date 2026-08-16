@@ -181,8 +181,8 @@
 </div>
 
 <div id="location-bar" class="hidden" aria-live="polite">
-  <span class="location-label">現在地</span>
-  <span id="location-name">位置情報を取得中…</span>
+  <span class="location-label">現在地　</span>
+  <span id="location-name">埼玉県桶川市</span>
 </div>
 
 <main>
@@ -650,7 +650,7 @@ function updateLocationBar() {
     return;
   }
   const name = getLocationLabel(state.pos);
-  label.textContent = name || '位置情報を取得中…';
+  label.textContent = name || '埼玉県桶川市';
   bar.classList.remove('hidden');
 }
 
