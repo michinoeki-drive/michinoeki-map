@@ -115,6 +115,48 @@
   .pref-row.done { background: #e8f5e9; color: var(--primary-dark); font-weight: 600; }
   .pref-row .count { font-variant-numeric: tabular-nums; }
 
+  /* --- 日本地図ヒートマップ --- */
+  .japan-map-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 12px auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .japan-map-svg {
+    width: 100%;
+    height: auto;
+    max-height: 380px;
+  }
+  .pref-path {
+    transition: fill 0.4s ease, opacity 0.2s;
+    cursor: pointer;
+    stroke: #ffffff;
+    stroke-width: 1;
+    stroke-linejoin: round;
+  }
+  .pref-path:hover {
+    opacity: 0.8;
+    stroke: #2e7d32;
+    stroke-width: 2;
+  }
+  .map-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  .legend-bar {
+    width: 120px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e0e0e0 0%, #c8e6c9 25%, #81c784 50%, #4caf50 75%, #1b5e20 100%);
+  }
+
   /* --- モーダル --- */
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
   .modal.show { display: flex; }
@@ -181,7 +223,7 @@
 </div>
 
 <div id="location-bar" class="hidden" aria-live="polite">
-  <span class="location-label">現在地　</span>
+  <span class="location-label">現在地 </span>
   <span id="location-name">現在地を取得中…</span>
 </div>
 
@@ -219,6 +261,81 @@
       <div class="progress-bar"><div class="progress-fill" id="stat-bar" style="width:0%"></div></div>
       <div style="text-align:right;font-size:12px;color:var(--muted);margin-top:6px;"><span id="stat-pct">0.0</span>%</div>
     </div>
+
+    <!-- 日本地図ヒートマップカード -->
+    <div class="stat-card">
+      <h2>都道府県別 ヒートマップ</h2>
+      <div class="japan-map-container">
+        <svg id="japan-map" class="japan-map-svg" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg">
+          <!-- 北海道・東北 -->
+          <path id="map-pref-北海道" class="pref-path" d="M370,20 L480,20 L480,110 L370,110 Z" />
+          <path id="map-pref-青森県" class="pref-path" d="M390,120 L450,120 L450,150 L390,150 Z" />
+          <path id="map-pref-岩手県" class="pref-path" d="M420,155 L450,155 L450,195 L420,195 Z" />
+          <path id="map-pref-宮城県" class="pref-path" d="M420,200 L450,200 L450,230 L420,230 Z" />
+          <path id="map-pref-秋田県" class="pref-path" d="M390,155 L415,155 L415,195 L390,195 Z" />
+          <path id="map-pref-山形県" class="pref-path" d="M390,200 L415,200 L415,230 L390,230 Z" />
+          <path id="map-pref-福島県" class="pref-path" d="M390,235 L450,235 L450,265 L390,265 Z" />
+
+          <!-- 関東 -->
+          <path id="map-pref-茨城県" class="pref-path" d="M425,270 L450,270 L450,300 L425,300 Z" />
+          <path id="map-pref-栃木県" class="pref-path" d="M395,270 L420,270 L420,295 L395,295 Z" />
+          <path id="map-pref-群馬県" class="pref-path" d="M365,270 L390,270 L390,295 L365,295 Z" />
+          <path id="map-pref-埼玉県" class="pref-path" d="M365,300 L420,300 L420,315 L365,315 Z" />
+          <path id="map-pref-千葉県" class="pref-path" d="M425,305 L450,305 L440,350 L420,330 Z" />
+          <path id="map-pref-東京都" class="pref-path" d="M365,320 L415,320 L415,335 L365,335 Z" />
+          <path id="map-pref-神奈川県" class="pref-path" d="M365,340 L415,340 L415,355 L365,355 Z" />
+
+          <!-- 中部・北陸 -->
+          <path id="map-pref-新潟県" class="pref-path" d="M355,210 L385,210 L385,265 L355,265 Z" />
+          <path id="map-pref-富山県" class="pref-path" d="M325,240 L350,240 L350,265 L325,265 Z" />
+          <path id="map-pref-石川県" class="pref-path" d="M310,210 L330,210 L320,265 L305,240 Z" />
+          <path id="map-pref-福井県" class="pref-path" d="M295,270 L320,270 L320,295 L295,295 Z" />
+          <path id="map-pref-山梨県" class="pref-path" d="M340,300 L360,300 L360,325 L340,325 Z" />
+          <path id="map-pref-長野県" class="pref-path" d="M335,270 L360,270 L360,295 L335,295 Z" />
+          <path id="map-pref-岐阜県" class="pref-path" d="M305,280 L330,280 L330,315 L305,315 Z" />
+          <path id="map-pref-静岡県" class="pref-path" d="M340,330 L390,330 L370,355 L340,355 Z" />
+          <path id="map-pref-愛知県" class="pref-path" d="M305,320 L335,320 L335,350 L305,350 Z" />
+
+          <!-- 近畿 -->
+          <path id="map-pref-三重県" class="pref-path" d="M280,330 L300,330 L300,375 L280,375 Z" />
+          <path id="map-pref-滋賀県" class="pref-path" d="M280,295 L300,295 L300,325 L280,325 Z" />
+          <path id="map-pref-京都府" class="pref-path" d="M255,280 L275,280 L275,320 L255,320 Z" />
+          <path id="map-pref-大阪府" class="pref-path" d="M255,325 L275,325 L275,355 L255,355 Z" />
+          <path id="map-pref-兵庫県" class="pref-path" d="M220,280 L250,280 L250,330 L220,330 Z" />
+          <path id="map-pref-奈良県" class="pref-path" d="M255,360 L275,360 L275,385 L255,385 Z" />
+          <path id="map-pref-和歌山県" class="pref-path" d="M230,360 L250,360 L250,395 L230,395 Z" />
+
+          <!-- 中国 -->
+          <path id="map-pref-鳥取県" class="pref-path" d="M175,280 L215,280 L215,300 L175,300 Z" />
+          <path id="map-pref-島根県" class="pref-path" d="M125,280 L170,280 L170,300 L125,300 Z" />
+          <path id="map-pref-岡山県" class="pref-path" d="M175,305 L215,305 L215,330 L175,330 Z" />
+          <path id="map-pref-広島県" class="pref-path" d="M135,305 L170,305 L170,335 L135,335 Z" />
+          <path id="map-pref-山口県" class="pref-path" d="M95,290 L130,290 L130,335 L95,335 Z" />
+
+          <!-- 四国 -->
+          <path id="map-pref-徳島県" class="pref-path" d="M180,380 L215,380 L215,405 L180,405 Z" />
+          <path id="map-pref-香川県" class="pref-path" d="M180,355 L215,355 L215,375 L180,375 Z" />
+          <path id="map-pref-愛媛県" class="pref-path" d="M135,355 L175,355 L165,395 L135,395 Z" />
+          <path id="map-pref-高知県" class="pref-path" d="M135,400 L215,400 L195,425 L135,425 Z" />
+
+          <!-- 九州・沖縄 -->
+          <path id="map-pref-福岡県" class="pref-path" d="M60,320 L90,320 L90,350 L60,350 Z" />
+          <path id="map-pref-佐賀県" class="pref-path" d="M30,335 L55,335 L55,360 L30,360 Z" />
+          <path id="map-pref-長崎県" class="pref-path" d="M5,335 L25,335 L25,380 L5,380 Z" />
+          <path id="map-pref-熊本県" class="pref-path" d="M35,365 L65,365 L65,405 L35,405 Z" />
+          <path id="map-pref-大分県" class="pref-path" d="M70,355 L95,355 L95,390 L70,390 Z" />
+          <path id="map-pref-宮崎県" class="pref-path" d="M70,395 L95,395 L95,440 L70,440 Z" />
+          <path id="map-pref-鹿児島県" class="pref-path" d="M30,410 L65,410 L65,455 L30,455 Z" />
+          <path id="map-pref-沖縄県" class="pref-path" d="M10,470 L60,470 L60,500 L10,500 Z" />
+        </svg>
+        <div class="map-legend">
+          <span>0%</span>
+          <div class="legend-bar"></div>
+          <span>100%</span>
+        </div>
+      </div>
+    </div>
+
     <div class="stat-card">
       <h2>都道府県別</h2>
       <div class="pref-list" id="pref-list"></div>
@@ -323,7 +440,7 @@ function getLocationLabel(pos) {
 function buildLocationName(address, fallback = '現在地') {
   if (!address) return fallback;
 
-  // 1. 都道府県を取得（state: 東京都/埼玉県/大阪府など, province, region）
+  // 1. 都道府県を取得
   const stateName = address.state || address.province || address.region || '';
   
   // 2. 市区町村を取得
@@ -437,7 +554,6 @@ async function fetchIPLocation() {
 
   let lat = null, lon = null, locationHint = '';
 
-  // 1. ipwho.is を試行
   try {
     const res = await fetch('https://ipwho.is/');
     const data = await res.json();
@@ -450,7 +566,6 @@ async function fetchIPLocation() {
     console.warn("ipwho.is failed:", e);
   }
 
-  // 2. 失敗した場合は ipapi.co を試行
   if (lat == null || lon == null) {
     try {
       const res = await fetch('https://ipapi.co/json/');
@@ -465,7 +580,6 @@ async function fetchIPLocation() {
     }
   }
 
-  // 3. さらに失敗した場合は ip-api.com を試行
   if (lat == null || lon == null) {
     try {
       const res = await fetch('https://ip-api.com/json/?lang=ja');
@@ -480,16 +594,14 @@ async function fetchIPLocation() {
     }
   }
 
-  // 位置情報が取得できた場合
   if (lat != null && lon != null) {
-    // 逆引きAPIでより正確な地名（埼玉県桶川市など）を取得
     const geoResult = await reverseGeocode(lat, lon);
     const displayName = geoResult ? geoResult.displayName : (locationHint || 'IP位置推計');
 
     state.pos = {
       lat: lat,
       lon: lon,
-      acc: 5000, // おおよそ5km精度の円
+      acc: 5000,
       isApprox: true,
       regionName: displayName,
       locationName: displayName
@@ -532,7 +644,6 @@ function startGeo() {
     },
     err => {
       console.warn("GPS Location error, fallback to IP location:", err);
-      // GPSが失敗した場合はIP位置情報へ切り替え
       fetchIPLocation();
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
@@ -584,7 +695,7 @@ function updateMapMarkers() {
 function updatePosMarker() {
   if (!state.pos || !state.map) return;
   const { lat, lon, acc, isApprox } = state.pos;
-  const color = isApprox ? '#ff9800' : '#2196f3'; // おおよその場合はオレンジ色
+  const color = isApprox ? '#ff9800' : '#2196f3';
 
   if (!state.posMarker) {
     state.posMarker = L.circleMarker([lat, lon], {
@@ -608,7 +719,6 @@ function render() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   const filter = document.getElementById('filter').value;
 
-  // おおよそ位置情報バナーの表示制御
   let approxBanner = document.getElementById('approx-banner');
   if (state.pos) {
     const locationText = getLocationLabel(state.pos);
@@ -726,16 +836,37 @@ function updateProgress() {
     byPref[s.pref].total++;
     if (state.visited[s.id]) byPref[s.pref].done++;
   });
+
+  // 都道府県リスト表示
   const html = Object.entries(byPref)
     .sort((a,b) => b[1].done/b[1].total - a[1].done/a[1].total)
     .map(([pref, c]) => {
-      const done = c.done === c.total && c.total > 0;
-      return `<div class="pref-row ${done ? 'done' : ''}">
-        <span>${done ? '👑 ' : ''}${escapeHtml(pref)}</span>
+      const isDone = c.done === c.total && c.total > 0;
+      return `<div class="pref-row ${isDone ? 'done' : ''}">
+        <span>${isDone ? '👑 ' : ''}${escapeHtml(pref)}</span>
         <span class="count">${c.done} / ${c.total}</span>
       </div>`;
     }).join('');
   document.getElementById('pref-list').innerHTML = html;
+
+  // SVGヒートマップの色更新とインタラクション設定
+  Object.entries(byPref).forEach(([pref, c]) => {
+    const el = document.getElementById(`map-pref-${pref}`);
+    if (el) {
+      const ratio = c.total > 0 ? c.done / c.total : 0;
+      let color = '#e0e0e0';
+      if (ratio > 0 && ratio <= 0.25) color = '#c8e6c9';
+      else if (ratio > 0.25 && ratio <= 0.5) color = '#81c784';
+      else if (ratio > 0.5 && ratio < 1.0) color = '#4caf50';
+      else if (ratio === 1.0) color = '#1b5e20';
+
+      el.style.fill = color;
+      el.onclick = () => {
+        const pctVal = (ratio * 100).toFixed(1);
+        toast(`【${pref}】 制覇率 ${pctVal}% (${c.done}/${c.total}駅)`);
+      };
+    }
+  });
 }
 
 // ===== モーダル =====
@@ -806,7 +937,6 @@ function openStation(s) {
   };
 
   document.getElementById('m-show-map').onclick = () => {
-    // 詳細画面を閉じずに地図タブへ切り替える
     document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
     
