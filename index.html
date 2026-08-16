@@ -222,6 +222,7 @@
     <div class="detail" id="m-year"></div>
     <div class="detail" id="m-hp"></div>
     <div class="detail" id="m-facil"></div>
+    <div class="detail" id="m-cur"></div>
     <div class="detail" id="m-dist"></div>
     <div id="m-hint" class="stamp-hint"></div>
     <button class="btn primary" id="m-stamp">🎯 スタンプを押す</button>
@@ -285,6 +286,31 @@ function fmtDist(m) {
   if (m == null) return "距離不明";
   if (m < 1000) return `${Math.round(m)}m`;
   return `${(m/1000).toFixed(1)}km`;
+}
+
+function getLocationLabel(pos) {
+  if (!pos) return '位置情報なし';
+  if (pos.locationName) return pos.locationName;
+  if (pos.regionName) return pos.regionName;
+  return `${pos.lat.toFixed(4)}, ${pos.lon.toFixed(4)}`;
+}
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`, {
+      headers: { 'Accept-Language': 'ja' }
+    });
+    if (!res.ok) throw new Error('reverse geo failed');
+    const data = await res.json();
+    const addr = data && data.address ? data.address : {};
+    const district = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state || '現在地';
+    const local = addr.city_district || addr.suburb || addr.neighbourhood;
+    const name = local ? `${district} ${local}` : district;
+    return name || (data && data.display_name ? data.display_name.split(',').slice(0, 3).join(',') : '現在地');
+  } catch (e) {
+    console.warn('Reverse geocode failed:', e);
+    return '';
+  }
 }
 
 // ===== トースト =====
@@ -369,14 +395,16 @@ async function fetchIPLocation() {
     const data = await res.json();
     
     if (data && data.latitude && data.longitude) {
+      const locationName = [data.city || data.region, data.region || data.country_name].filter(Boolean).join(' ');
       state.pos = {
         lat: parseFloat(data.latitude),
         lon: parseFloat(data.longitude),
         acc: 5000, // おおよそ5km精度の円
         isApprox: true,
-        regionName: data.city || data.region || ''
+        regionName: locationName || 'IP位置推計',
+        locationName: locationName || 'IP位置推計'
       };
-      toast(`おおよその位置を取得しました (${state.pos.regionName || 'IP位置推計'})`);
+      toast(`おおよその位置を取得しました (${state.pos.locationName})`);
       updatePosMarker();
       render();
     } else {
@@ -398,13 +426,19 @@ function startGeo() {
   }
   document.getElementById('locate-btn').classList.add('on');
   state.watchId = navigator.geolocation.watchPosition(
-    pos => {
+    async pos => {
       state.pos = {
         lat: pos.coords.latitude,
         lon: pos.coords.longitude,
         acc: pos.coords.accuracy,
-        isApprox: false
+        isApprox: false,
+        locationName: '現在地を取得中…'
       };
+      const locationName = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+      if (locationName) {
+        state.pos.locationName = locationName;
+        state.pos.regionName = locationName;
+      }
       updatePosMarker();
       render();
     },
@@ -488,14 +522,19 @@ function render() {
 
   // おおよそ位置情報バナーの表示制御
   let approxBanner = document.getElementById('approx-banner');
-  if (state.pos && state.pos.isApprox) {
-    if (!approxBanner) {
-      approxBanner = document.createElement('div');
-      approxBanner.id = 'approx-banner';
-      approxBanner.className = 'approx-banner';
-      approxBanner.innerHTML = '⚠️ GPS未取得のため、ネットワークによる<b>おおよその現在地</b>を表示しています';
-      const listView = document.getElementById('list-view');
-      listView.insertBefore(approxBanner, listView.children[1]);
+  if (state.pos) {
+    const locationText = getLocationLabel(state.pos);
+    if (state.pos.isApprox) {
+      if (!approxBanner) {
+        approxBanner = document.createElement('div');
+        approxBanner.id = 'approx-banner';
+        approxBanner.className = 'approx-banner';
+        const listView = document.getElementById('list-view');
+        listView.insertBefore(approxBanner, listView.children[1]);
+      }
+      approxBanner.innerHTML = `⚠️ GPS未取得のため、ネットワークによる<b>おおよその現在地</b>を表示しています<br>📍 ${escapeHtml(locationText)}`;
+    } else if (approxBanner) {
+      approxBanner.remove();
     }
   } else if (approxBanner) {
     approxBanner.remove();
@@ -620,6 +659,9 @@ function openStation(s) {
     : isApprox
       ? `約${fmtDist(dist)} (※おおよその位置)`
       : `${fmtDist(dist)} (GPS精度 ±${Math.round(state.pos.acc)}m)`;
+  document.getElementById('m-cur').innerHTML = state.pos
+    ? `<b>現在地:</b> ${escapeHtml(getLocationLabel(state.pos))}`
+    : '<b>現在地:</b> 不明';
   document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${distLabel}`;
 
   const hint = document.getElementById('m-hint');
@@ -662,27 +704,20 @@ function openStation(s) {
   };
 
   document.getElementById('m-show-map').onclick = () => {
-    closeModal(); // モーダルを閉じる
-    
-    // タブの表示をリセットし、「地図」タブをアクティブにする
+    // 詳細画面を閉じずに地図タブへ切り替える
     document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
     
     document.querySelector('#tabs button[data-view="map-view"]').classList.add('active');
     document.getElementById('map-view').classList.add('active');
     
-    // 地図の表示を更新し、対象の道の駅にズームして移動する
     if (state.map) {
       setTimeout(() => {
-        state.map.invalidateSize(); // 地図のサイズを再計算
-        state.map.setView([s.lat, s.lon], 14); // ズームレベル14で対象の座標に移動
-        
-        // 該当する道の駅のツールチップ（駅名）を表示する
+        state.map.invalidateSize();
+        state.map.setView([s.lat, s.lon], 14);
         const marker = state.markers[s.id];
-        if (marker) {
-          marker.openTooltip();
-        }
-      }, 100); // タブ切り替えのアニメーションを待つために少し遅延させる
+        if (marker) marker.openTooltip();
+      }, 100);
     }
   };
 
