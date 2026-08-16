@@ -73,8 +73,64 @@
   #map-view { display: none; }
   #map-view.active { display: block; }
   #map { position: absolute; inset: 0; }
-  #locate-btn { position: absolute; bottom: 20px; right: 14px; z-index: 500; background: #fff; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); border-radius: 50%; width: 52px; height: 52px; font-size: 22px; cursor: pointer; }
-  #locate-btn.on { background: var(--primary); color: #fff; }
+
+  /* --- 追尾ボタンのUI改善 --- */
+  #locate-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 14px;
+    z-index: 500;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    border-radius: 24px;
+    height: 44px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 追尾ON状態（アクティブ） */
+  #locate-btn.on {
+    background: #2196f3;
+    color: #ffffff;
+    border-color: #2196f3;
+    box-shadow: 0 4px 14px rgba(33, 150, 243, 0.4);
+  }
+
+  /* 追尾ON時のパルス（波紋）エフェクト */
+  #locate-btn.on::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 28px;
+    border: 2px solid #2196f3;
+    animation: locate-pulse 1.8s infinite ease-out;
+    pointer-events: none;
+  }
+
+  @keyframes locate-pulse {
+    0% { transform: scale(0.98); opacity: 0.8; }
+    100% { transform: scale(1.12); opacity: 0; }
+  }
+
+  #locate-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.25s ease;
+  }
+
+  #locate-btn.on svg {
+    transform: rotate(-45deg);
+  }
+
   #recenter-btn {
     position: absolute;
     bottom: 84px;
@@ -250,19 +306,20 @@
     <div id="map"></div>
     <button id="recenter-btn" title="現在地に戻る" aria-label="現在地に戻る">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <!-- 外側の円 -->
         <circle cx="12" cy="12" r="7" />
-        <!-- 上下の線 -->
         <path d="M12 2v3" />
         <path d="M12 19v3" />
-        <!-- 左右の線 -->
         <path d="M2 12h3" />
         <path d="M19 12h3" />
-        <!-- 中心のドット（オプション: 不要なら削除可能） -->
         <circle cx="12" cy="12" r="1" />
       </svg>
     </button>
-    <button id="locate-btn" title="現在地">📍</button>
+    <button id="locate-btn" title="現在地追尾の切り替え" aria-label="現在地追尾の切り替え">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+      </svg>
+      <span id="locate-btn-label">追尾 OFF</span>
+    </button>
     <div class="legend">
       <span><i style="background:#90a4ae"></i>未訪問</span>
       <span><i style="background:#4caf50"></i>訪問済</span>
@@ -447,12 +504,27 @@ async function fetchIPLocation() {
     toast('位置情報の取得に失敗したため、東京駅周辺を現在地として表示します');
     updatePosMarker(); render();
   }
-  document.getElementById('locate-btn').classList.remove('on');
+  updateLocateUI(false);
+}
+
+// UI更新用ヘルパー関数
+function updateLocateUI(isOn) {
+  const btn = document.getElementById('locate-btn');
+  const label = document.getElementById('locate-btn-label');
+  if (!btn || !label) return;
+
+  if (isOn) {
+    btn.classList.add('on');
+    label.textContent = '追尾 ON';
+  } else {
+    btn.classList.remove('on');
+    label.textContent = '追尾 OFF';
+  }
 }
 
 function startGeo() {
   if (!navigator.geolocation) return fetchIPLocation();
-  document.getElementById('locate-btn').classList.add('on');
+  updateLocateUI(true);
   state.watchId = navigator.geolocation.watchPosition(
     async pos => {
       state.pos = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, isApprox: false, locationName: '現在地を取得中…' };
@@ -464,7 +536,11 @@ function startGeo() {
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
   );
 }
-function stopGeo() { if (state.watchId!=null) navigator.geolocation.clearWatch(state.watchId); state.watchId=null; document.getElementById('locate-btn').classList.remove('on'); }
+function stopGeo() {
+  if (state.watchId!=null) navigator.geolocation.clearWatch(state.watchId);
+  state.watchId=null;
+  updateLocateUI(false);
+}
 
 function initMap() {
   state.map = L.map('map', { zoomControl: true }).setView([36.5, 138], 5);
