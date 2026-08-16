@@ -129,14 +129,17 @@
 <body>
 
 <div id="splash">
-  <div class="logo">🛣️</div>
+  <img src="apple-touch-icon.png" alt="道の駅スタンプラリー" style="width:72px;height:72px;border-radius:18px;object-fit:cover;box-shadow:0 10px 24px rgba(0,0,0,.18);margin-bottom:12px;">
   <h2>道の駅スタンプラリー</h2>
   <p>データ読込中…</p>
   <div class="spinner"></div>
 </div>
 
 <header>
-  <h1>🛣️ 道の駅スタンプラリー<small>全国1,231駅</small></h1>
+  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+    <img src="apple-touch-icon.png" alt="道の駅スタンプラリー" style="width:28px;height:28px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+    <h1 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">道の駅スタンプラリー<small>全国1,231駅</small></h1>
+  </div>
   <div class="header-actions">
     <button id="reload-btn" title="画面を更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -611,9 +614,13 @@ function openStation(s) {
   const facMap = { restaurant:'🍴レストラン', onsen:'♨️温泉', camp:'⛺キャンプ', ev:'🔌EV充電', wifi:'📶Wi-Fi', shop:'🛍️売店' };
   const facList = Object.keys(fac).filter(k => fac[k]).map(k => facMap[k]).filter(Boolean).join(' ');
   document.getElementById('m-facil').innerHTML = facList ? `<b>施設:</b> ${facList}` : '';
-  
-  const distLabel = isApprox ? `約${fmtDist(dist)} (※おおよその位置)` : `${fmtDist(dist)} (GPS精度 ±${Math.round(state.pos.acc)}m)`;
-  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${state.pos ? distLabel : '不明'}`;
+
+  const distLabel = !state.pos
+    ? '不明'
+    : isApprox
+      ? `約${fmtDist(dist)} (※おおよその位置)`
+      : `${fmtDist(dist)} (GPS精度 ±${Math.round(state.pos.acc)}m)`;
+  document.getElementById('m-dist').innerHTML = `<b>距離:</b> ${distLabel}`;
 
   const hint = document.getElementById('m-hint');
   const btn = document.getElementById('m-stamp');
