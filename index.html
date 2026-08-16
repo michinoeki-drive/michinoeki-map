@@ -1360,11 +1360,15 @@ function openStation(s) {
     btn.disabled = true;
   }
 
+  const mapViewBtn = document.getElementById('m-show-map');
+  const isMapActive = document.getElementById('map-view').classList.contains('active');
+  mapViewBtn.style.display = isMapActive ? 'none' : 'block';
+
   document.getElementById('m-nav').onclick = () => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, '_blank');
   };
 
-  document.getElementById('m-show-map').onclick = () => {
+  mapViewBtn.onclick = () => {
     document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
     
