@@ -62,6 +62,26 @@
   .legend span { display: inline-flex; align-items: center; margin-right: 10px; }
   .legend i { width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
 
+  #location-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(38, 50, 56, 0.96);
+    color: #fff;
+    font-size: 13px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.12);
+  }
+  #location-bar.hidden { display: none; }
+  #location-bar .location-label { opacity: 0.8; white-space: nowrap; }
+  #location-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
   /* --- リスト --- */
   #list-header { padding: 10px 14px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; display: flex; gap: 8px; align-items: center; }
   #search { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; outline: none; }
@@ -158,6 +178,11 @@
   <button data-view="list-view" class="active">📋 近い順</button>
   <button data-view="map-view">🗺️ 地図</button>
   <button data-view="progress-view">📊 進捗</button>
+</div>
+
+<div id="location-bar" class="hidden" aria-live="polite">
+  <span class="location-label">現在地</span>
+  <span id="location-name">位置情報を取得中…</span>
 </div>
 
 <main>
@@ -295,6 +320,14 @@ function getLocationLabel(pos) {
   return `${pos.lat.toFixed(4)}, ${pos.lon.toFixed(4)}`;
 }
 
+function buildLocationName(address, fallback = '現在地') {
+  const stateName = address?.state || address?.region || '';
+  const cityName = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
+  const districtName = address?.suburb || address?.neighbourhood || address?.city_district || '';
+  const parts = [stateName, cityName, districtName].filter(Boolean);
+  return parts.length ? parts.join(' ') : fallback;
+}
+
 async function reverseGeocode(lat, lon) {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`, {
@@ -303,13 +336,11 @@ async function reverseGeocode(lat, lon) {
     if (!res.ok) throw new Error('reverse geo failed');
     const data = await res.json();
     const addr = data && data.address ? data.address : {};
-    const district = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state || '現在地';
-    const local = addr.city_district || addr.suburb || addr.neighbourhood;
-    const name = local ? `${district} ${local}` : district;
-    return name || (data && data.display_name ? data.display_name.split(',').slice(0, 3).join(',') : '現在地');
+    const label = buildLocationName(addr, data && data.display_name ? data.display_name.split(',').slice(0, 3).join(',') : '現在地');
+    return { displayName: label, address: addr };
   } catch (e) {
     console.warn('Reverse geocode failed:', e);
-    return '';
+    return null;
   }
 }
 
@@ -434,10 +465,11 @@ function startGeo() {
         isApprox: false,
         locationName: '現在地を取得中…'
       };
-      const locationName = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-      if (locationName) {
-        state.pos.locationName = locationName;
-        state.pos.regionName = locationName;
+      const result = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+      if (result) {
+        state.pos.locationName = result.displayName;
+        state.pos.regionName = result.displayName;
+        state.pos.address = result.address;
       }
       updatePosMarker();
       render();
@@ -540,6 +572,8 @@ function render() {
     approxBanner.remove();
   }
 
+  updateLocationBar();
+
   let items = state.stations.map(s => {
     const dist = state.pos ? distance(state.pos.lat, state.pos.lon, s.lat, s.lon) : null;
     return { ...s, _dist: dist, _visited: !!state.visited[s.id] };
@@ -606,6 +640,18 @@ function render() {
 
   updateProgress();
   if (state.map) updateMapMarkers();
+}
+
+function updateLocationBar() {
+  const bar = document.getElementById('location-bar');
+  const label = document.getElementById('location-name');
+  if (!state.pos || state.pos.isApprox) {
+    bar.classList.add('hidden');
+    return;
+  }
+  const name = getLocationLabel(state.pos);
+  label.textContent = name || '位置情報を取得中…';
+  bar.classList.remove('hidden');
 }
 
 function updateProgress() {
