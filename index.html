@@ -75,6 +75,32 @@
   #map { position: absolute; inset: 0; }
   #locate-btn { position: absolute; bottom: 20px; right: 14px; z-index: 500; background: #fff; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.25); border-radius: 50%; width: 52px; height: 52px; font-size: 22px; cursor: pointer; }
   #locate-btn.on { background: var(--primary); color: #fff; }
+  #recenter-btn {
+    position: absolute;
+    bottom: 84px;
+    right: 14px;
+    z-index: 500;
+    background: #fff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  #recenter-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: #333;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
   .legend { position: absolute; bottom: 20px; left: 14px; z-index: 500; background: rgba(255,255,255,.95); padding: 8px 12px; border-radius: 10px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15); line-height: 1.7; color: #333; }
   .legend span { display: inline-flex; align-items: center; margin-right: 10px; }
   .legend i { width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
@@ -222,6 +248,20 @@
   <!-- 地図 -->
   <section id="map-view" class="view">
     <div id="map"></div>
+    <button id="recenter-btn" title="現在地に戻る" aria-label="現在地に戻る">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <!-- 外側の円 -->
+        <circle cx="12" cy="12" r="7" />
+        <!-- 上下の線 -->
+        <path d="M12 2v3" />
+        <path d="M12 19v3" />
+        <!-- 左右の線 -->
+        <path d="M2 12h3" />
+        <path d="M19 12h3" />
+        <!-- 中心のドット（オプション: 不要なら削除可能） -->
+        <circle cx="12" cy="12" r="1" />
+      </svg>
+    </button>
     <button id="locate-btn" title="現在地">📍</button>
     <div class="legend">
       <span><i style="background:#90a4ae"></i>未訪問</span>
@@ -395,7 +435,18 @@ async function fetchIPLocation() {
     const name = geo ? geo.displayName : (hint || 'IP位置推計');
     state.pos = { lat, lon, acc:5000, isApprox:true, regionName:name, locationName:name };
     toast(`おおよその位置を取得しました (${name})`); updatePosMarker(); render();
-  } else toast("位置情報の取得に失敗しました");
+  } else {
+    state.pos = {
+      lat: 35.681,
+      lon: 139.767,
+      acc: 5000,
+      isApprox: true,
+      regionName: '東京駅周辺',
+      locationName: '東京駅周辺'
+    };
+    toast('位置情報の取得に失敗したため、東京駅周辺を現在地として表示します');
+    updatePosMarker(); render();
+  }
   document.getElementById('locate-btn').classList.remove('on');
 }
 
@@ -661,6 +712,10 @@ async function init() {
   document.getElementById('m-stamp').addEventListener('click', doStamp); document.getElementById('m-close').addEventListener('click', closeModal);
   document.getElementById('reload-btn').addEventListener('click', () => window.location.reload()); document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
   document.getElementById('locate-btn').addEventListener('click', () => { if (state.watchId != null) stopGeo(); else startGeo(); });
+  document.getElementById('recenter-btn').addEventListener('click', () => {
+    if (!state.pos || !state.map) return;
+    state.map.setView([state.pos.lat, state.pos.lon], state.pos.isApprox ? 10 : 13);
+  });
   document.getElementById('export-btn').addEventListener('click', exportData); document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
   document.getElementById('import-file').addEventListener('change', e => { if (e.target.files[0]) importData(e.target.files[0]); });
   document.getElementById('reset-btn').addEventListener('click', resetAll);
