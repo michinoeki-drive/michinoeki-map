@@ -174,12 +174,12 @@
 
   .pref-btn {
     position: absolute;
-    border: 1px solid #ffffff;
-    border-radius: 6px;
+    border: 0.5px solid #ffffff;
+    border-radius: 3px;              /* 角丸を小さくして枠内を広く確保 */
     padding: 0;
     background: #e0e0e0;
     color: #333;
-    font-size: 11px;
+    font-size: clamp(7px, 2.2vw, 10px); /* 画面幅に合わせて7px〜10pxで自動調整 */
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -188,10 +188,14 @@
     justify-content: center;
     box-sizing: border-box;
     overflow: hidden;
+    white-space: nowrap;             /* 文字の折り返し（縦並び）を防止 */
+    line-height: 1;
   }
+
   .pref-btn span {
     position: relative;
     z-index: 2;
+    transform: scale(0.95);         /* 窮屈な場所で少し縮小表示 */
   }
   .pref-btn:hover {
     opacity: 0.7;
