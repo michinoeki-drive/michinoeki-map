@@ -182,7 +182,7 @@
 
 <div id="location-bar" class="hidden" aria-live="polite">
   <span class="location-label">現在地　</span>
-  <span id="location-name">埼玉県桶川市</span>
+  <span id="location-name">現在地を取得中…</span>
 </div>
 
 <main>
@@ -324,8 +324,15 @@ function buildLocationName(address, fallback = '現在地') {
   const stateName = address?.state || address?.region || '';
   const cityName = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
   const districtName = address?.suburb || address?.neighbourhood || address?.city_district || '';
-  const parts = [stateName, cityName, districtName].filter(Boolean);
-  return parts.length ? parts.join(' ') : fallback;
+
+  const candidate = [stateName, cityName, districtName].filter(Boolean);
+  if (candidate.length) {
+    if (candidate.length === 1 && cityName && !stateName) {
+      return cityName;
+    }
+    return candidate.join(' ');
+  }
+  return fallback;
 }
 
 async function reverseGeocode(lat, lon) {
