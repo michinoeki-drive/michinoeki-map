@@ -433,33 +433,76 @@ async function loadStations() {
 
 // ===== IP / ネットワークによるおおよその位置情報取得（フォールバック） =====
 async function fetchIPLocation() {
+  toast("GPSオフのため、ネットワークからおおよその位置を取得中…");
+
+  let lat = null, lon = null, locationHint = '';
+
+  // 1. ipwho.is を試行
   try {
-    toast("GPSオフのため、ネットワークからおおよその位置を取得中…");
-    const res = await fetch('https://ipapi.co/json/');
+    const res = await fetch('https://ipwho.is/');
     const data = await res.json();
-    
-    if (data && data.latitude && data.longitude) {
-      const locationName = [data.city || data.region, data.region || data.country_name].filter(Boolean).join(' ');
-      state.pos = {
-        lat: parseFloat(data.latitude),
-        lon: parseFloat(data.longitude),
-        acc: 5000, // おおよそ5km精度の円
-        isApprox: true,
-        regionName: locationName || 'IP位置推計',
-        locationName: locationName || 'IP位置推計'
-      };
-      toast(`おおよその位置を取得しました (${state.pos.locationName})`);
-      updatePosMarker();
-      render();
-    } else {
-      throw new Error("Invalid IP geo data");
+    if (data && data.success) {
+      lat = data.latitude;
+      lon = data.longitude;
+      locationHint = [data.region, data.city].filter(Boolean).join('');
     }
   } catch (e) {
-    console.warn("IP Geolocation failed:", e);
-    toast("位置情報の取得に失敗しました");
-  } finally {
-    document.getElementById('locate-btn').classList.remove('on');
+    console.warn("ipwho.is failed:", e);
   }
+
+  // 2. 失敗した場合は ipapi.co を試行
+  if (lat == null || lon == null) {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      if (data && data.latitude && data.longitude) {
+        lat = parseFloat(data.latitude);
+        lon = parseFloat(data.longitude);
+        locationHint = [data.region, data.city].filter(Boolean).join('');
+      }
+    } catch (e) {
+      console.warn("ipapi.co failed:", e);
+    }
+  }
+
+  // 3. さらに失敗した場合は ip-api.com を試行
+  if (lat == null || lon == null) {
+    try {
+      const res = await fetch('https://ip-api.com/json/?lang=ja');
+      const data = await res.json();
+      if (data && data.status === 'success') {
+        lat = data.lat;
+        lon = data.lon;
+        locationHint = [data.regionName, data.city].filter(Boolean).join('');
+      }
+    } catch (e) {
+      console.warn("ip-api.com failed:", e);
+    }
+  }
+
+  // 位置情報が取得できた場合
+  if (lat != null && lon != null) {
+    // 逆引きAPIでより正確な地名（埼玉県桶川市など）を取得
+    const geoResult = await reverseGeocode(lat, lon);
+    const displayName = geoResult ? geoResult.displayName : (locationHint || 'IP位置推計');
+
+    state.pos = {
+      lat: lat,
+      lon: lon,
+      acc: 5000, // おおよそ5km精度の円
+      isApprox: true,
+      regionName: displayName,
+      locationName: displayName
+    };
+
+    toast(`おおよその位置を取得しました (${displayName})`);
+    updatePosMarker();
+    render();
+  } else {
+    toast("位置情報の取得に失敗しました");
+  }
+
+  document.getElementById('locate-btn').classList.remove('on');
 }
 
 // ===== 現在地取得 =====
