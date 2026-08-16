@@ -246,6 +246,37 @@
   #splash p { font-size: 13px; opacity: .9; margin-bottom: 20px; }
   .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* --- 駅名常時表示ボタン --- */
+  #name-toggle-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 500;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    border-radius: 20px;
+    height: 36px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ボタンON状態 */
+  #name-toggle-btn.on {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.4);
+  }
 </style>
 </head>
 <body>
@@ -304,6 +335,14 @@
   <!-- 地図 -->
   <section id="map-view" class="view">
     <div id="map"></div>
+    <!-- ★ 右上に追加するボタン -->
+    <button id="name-toggle-btn" title="駅名の常時表示切替" aria-label="駅名の常時表示切替">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
+      <span id="name-toggle-label">駅名 OFF</span>
+    </button>
     <button id="recenter-btn" title="現在地に戻る" aria-label="現在地に戻る">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="7" />
@@ -411,6 +450,7 @@ const STAMP_RADIUS_M = 100;
 
 const state = {
   stations: [], visited: {}, pos: null, watchId: null, map: null, markers: {}, posMarker: null, posCircle: null, currentStation: null, firebaseReady: false, deviceId: null,
+  showStationNames: false // ★ 追加
 };
 
 function distance(lat1, lon1, lat2, lon2) {
@@ -797,6 +837,37 @@ async function init() {
   document.getElementById('reset-btn').addEventListener('click', resetAll);
   startGeo();
   document.getElementById('splash').classList.add('hide'); setTimeout(() => document.getElementById('splash').remove(), 500);
+  document.getElementById('name-toggle-btn').addEventListener('click', toggleStationNames);
+}
+
+// 駅名表示の切替関数を追加
+function toggleStationNames() {
+  state.showStationNames = !state.showStationNames;
+  const btn = document.getElementById('name-toggle-btn');
+  const label = document.getElementById('name-toggle-label');
+  
+  if (!btn || !label) return;
+
+  if (state.showStationNames) {
+    btn.classList.add('on');
+    label.textContent = '駅名 ON';
+  } else {
+    btn.classList.remove('on');
+    label.textContent = '駅名 OFF';
+  }
+
+  // 全マーカーのツールチップ状態を一括更新
+  state.stations.forEach(s => {
+    const m = state.markers[s.id];
+    if (m) {
+      m.unbindTooltip();
+      m.bindTooltip(s.name, {
+        direction: 'top',
+        permanent: state.showStationNames,
+        offset: [0, -8]
+      });
+    }
+  });
 }
 init();
 </script>
