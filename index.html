@@ -222,10 +222,12 @@
   .modal.show { display: flex; }
   .modal-box { background: var(--card); color: var(--text); width: 100%; max-width: 500px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 85vh; overflow-y: auto; animation: slideup .25s; }
   @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal h3 { font-size: 20px; margin-bottom: 4px; }
+.modal h3 { font-size: 20px; margin-bottom: 4px; }
   .modal .sub { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
-  .modal .detail { font-size: 13px; margin-bottom: 8px; color: #455a64; }
+  .modal .detail { font-size: 13px; margin-bottom: 8px; color: #455a64; line-height: 1.5; }
   .modal .detail b { color: var(--text); }
+  .modal .detail a { color: #1976d2; text-decoration: none; }
+  .modal .detail a:hover { text-decoration: underline; }
   .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; }
   .btn.primary { background: var(--primary); color: #fff; }
   .btn.primary:disabled { background: #bdbdbd; cursor: not-allowed; }
@@ -411,6 +413,13 @@
   <div class="modal-box">
     <h3 id="m-name">-</h3>
     <div class="sub" id="m-sub">-</div>
+    <!-- 新しく取得したデータを表示する枠 -->
+    <div class="detail" id="m-full-addr"></div>
+    <div class="detail" id="m-tel"></div>
+    <div class="detail" id="m-hours"></div>
+    <div class="detail" id="m-parking"></div>
+    
+    <!-- 既存のデータ枠 -->
     <div class="detail" id="m-addr"></div>
     <div class="detail" id="m-year"></div>
     <div class="detail" id="m-hp"></div>
@@ -765,7 +774,21 @@ function openStation(s) {
   document.getElementById('m-name').textContent = s.name; document.getElementById('m-sub').textContent = `${s.pref} ${s.addr || ''}`;
   document.getElementById('m-year').innerHTML = s.year ? `<b>登録:</b> ${escapeHtml(s.touroku || '')} (${escapeHtml(s.year)})` : '';
   document.getElementById('m-addr').innerHTML = `<b>座標:</b> ${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}`;
-  document.getElementById('m-hp').innerHTML = s.hp ? `<b>HP:</b> <a href="${escapeHtml(s.hp)}" target="_blank" rel="noopener">公式ページ</a>` : '';
+  
+  // --- ▼ 新規追加データの流し込み ---
+  document.getElementById('m-full-addr').innerHTML = s.full_address ? `<b>住所:</b> ${escapeHtml(s.full_address)}` : '';
+  // 電話番号はスマホからタップでかけられるようにリンク化します
+  const cleanTel = s.tel ? s.tel.replace(/[^\d]/g, '') : '';
+  document.getElementById('m-tel').innerHTML = s.tel ? `<b>TEL:</b> <a href="tel:${cleanTel}">${escapeHtml(s.tel)}</a>` : '';
+  document.getElementById('m-hours').innerHTML = s.hours ? `<b>営業:</b> ${escapeHtml(s.hours)}` : '';
+  document.getElementById('m-parking').innerHTML = s.parking ? `<b>駐車:</b> ${escapeHtml(s.parking)}` : '';
+
+  // HPは独自サイト(official_hp)と道の駅公式(hp)の両方があれば並べて表示
+  let hpLinks = [];
+  if (s.official_hp) hpLinks.push(`<a href="${escapeHtml(s.official_hp)}" target="_blank" rel="noopener">駅独自サイト</a>`);
+  if (s.hp) hpLinks.push(`<a href="${escapeHtml(s.hp)}" target="_blank" rel="noopener">全国連絡会ページ</a>`);
+  document.getElementById('m-hp').innerHTML = hpLinks.length > 0 ? `<b>HP:</b> ${hpLinks.join(' / ')}` : '';
+
   const facMap = { restaurant:'🍴レストラン', onsen:'♨️温泉', camp:'⛺キャンプ', ev:'🔌EV充電', wifi:'📶Wi-Fi', shop:'🛍️売店' };
   const facList = Object.keys(s.facilities||{}).filter(k => s.facilities[k]).map(k => facMap[k]).filter(Boolean).join(' ');
   document.getElementById('m-facil').innerHTML = facList ? `<b>施設:</b> ${facList}` : '';
